@@ -1,4 +1,5 @@
 GET     /                           controllers.ContractController.contractList
 GET     /createContract             controllers.ContractController.createContract
+POST    /createContract             controllers.ContractController.submitContract
 
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

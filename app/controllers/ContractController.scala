@@ -13,4 +13,11 @@ class ContractController @Inject()(mcc: MessagesControllerComponents) extends Me
     def createContract: Action[AnyContent] = Action { implicit request: MessagesRequest[AnyContent] =>
         Ok(views.html.createContract(ContractHelper.ContractForm.form))
     }
+
+    def submitContract: Action[AnyContent] = Action { implicit request =>
+        ContractHelper.ContractForm.form.bindFromRequest.fold(
+            errors => BadRequest(views.html.createContract(errors)),
+            contractData => Ok(views.html.index(s"Contract data: $contractData"))
+        )
+    }
 }

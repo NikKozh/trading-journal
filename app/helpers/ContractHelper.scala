@@ -1,6 +1,7 @@
 package helpers
 
 import java.sql.Timestamp
+import java.util.Date
 
 import play.api.data.Forms._
 import play.api.data.Form
@@ -33,7 +34,7 @@ object ContractHelper {
     object ContractForm {
         case class ContractData(number: Int,
                                 contractType: String,
-                                created: Timestamp,
+                                created: Date, // TODO: потом при переводе в обычную сущность Contract надо будет конвертировать в Timestamp
                                 expiration: Int = 5,
                                 fxSymbol: String,
                                 direction: String,
@@ -50,7 +51,7 @@ object ContractHelper {
             mapping(
                 "number" -> number,
                 "contractType" -> text,
-                "created" -> sqlTimestamp,
+                "created" -> date,
                 "expiration" -> number,
                 "fxSymbol" -> text,
                 "direction" -> text,
