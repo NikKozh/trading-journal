@@ -1,0 +1,52 @@
+@import helpers.ContractHelper.ContractForm
+@import helper._
+
+@(form: Form[ContractForm.ContractData])(implicit request: MessagesRequestHeader)
+
+@main("Создание сделки") {
+    @* TODO: накинуть простую невидимую таблицу и туда отрендерить все поля через helper.form (после прототипа будет Bootstrap) *@
+    @helper.form(Call("", "")) {
+        @CSRF.formField
+        <style>
+            table {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .button-wrapper {
+                text-align: center;
+            }
+
+            td {
+                padding: 20px;
+            }
+        </style>
+
+        <table>
+            <tr>
+                <td>@helper.inputText(form("number"), '_label -> "Номер сделки", 'type -> "number")</td>
+                <td>@helper.inputText(form("contractType"), '_label -> "Тип счёта (Реал/Демо)")</td>
+                <td>@helper.inputDate(form("created"), '_label -> "Дата")</td>
+            </tr>
+            <tr>
+                <td>@helper.inputText(form("expiration"), '_label -> "Экспирация, мин", 'type -> "number")</td>
+                <td>@helper.inputText(form("fxSymbol"), '_label -> "Актив (EUR/USD)")</td>
+                <td>@helper.inputText(form("direction"), '_label -> "Прогноз (Call/Put)")</td>
+            </tr>
+            <tr>
+                <td>@helper.inputText(form("buyPrice"), '_label -> "Вложение, $", 'type -> "number")</td>
+                <td>@helper.inputText(form("profitPercent"), '_label -> "Процент прибыли", 'type -> "number")</td>
+                <td>@helper.checkbox(form("isWin"), '_label -> "В плюс?")</td>
+            </tr>
+            <tr>
+                <td>@helper.inputText(form("tags"), '_label -> "Тэги (включая фибо-уровень и пользу индикаторов)")</td>
+                <td>@helper.checkbox(form("isCorrect"), '_label -> "Вход по ТС?")</td>
+                <td>@helper.textarea(form("description"), '_label -> "Описание сделки", 'rows -> 10, 'cols -> 50)</td>
+            </tr>
+        </table>
+        <br>
+        <div class="button-wrapper">
+            <button>Создать сделку</button>
+        </div>
+    }
+}

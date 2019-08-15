@@ -1,3 +1,4 @@
-GET     /                           controllers.ContractController.index
+GET     /                           controllers.ContractController.contractList
+GET     /createContract             controllers.ContractController.createContract
 
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
