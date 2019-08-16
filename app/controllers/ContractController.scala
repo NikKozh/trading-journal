@@ -4,7 +4,7 @@ import helpers.ContractHelper._
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
-import models.ContractData
+import models.{Contract, ContractData}
 
 @Singleton
 class ContractController @Inject()(mcc: MessagesControllerComponents,
@@ -22,7 +22,10 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     def submitContract: Action[AnyContent] = Action { implicit request =>
         contractForm.bindFromRequest.fold(
             errors => BadRequest(views.html.createContract(errors)),
-            contractData => Ok(views.html.index(s"Contract data: $contractData"))
+            contractData => {
+                val savedContract = contractService.save(Contract(contractData))
+                Ok(views.html.index(s"Saved contract: $savedContract"))
+            }
         )
     }
 }

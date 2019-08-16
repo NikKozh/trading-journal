@@ -29,9 +29,28 @@ case class Contract(id: String = UUID.randomUUID().toString,
         } yield if (isWin) price + price * percent else -price
 }
 
+object Contract {
+    def apply(dto: ContractData): Contract =
+        new Contract(
+            number = dto.number,
+            contractType = dto.contractType,
+            created = Timestamp.from(dto.created.toInstant),
+            expiration = dto.expiration,
+            fxSymbol = dto.fxSymbol,
+            direction = dto.direction,
+            buyPrice = Some(dto.buyPrice),
+            profitPercent = Some(dto.profitPercent),
+            isWin = dto.isWin,
+            screenshotsIds = Seq.empty, // TODO: не забыть здесь исправить, когда добавлю поле в dto
+            tags = dto.tags,
+            isCorrect = dto.isCorrect,
+            description = dto.description
+        )
+}
+
 case class ContractData(number: Int,
                         contractType: String,
-                        created: Date, // TODO: потом при переводе в обычную сущность Contract надо будет конвертировать в Timestamp
+                        created: Date,
                         expiration: Int = 5,
                         fxSymbol: String,
                         direction: String,
