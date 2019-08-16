@@ -8,6 +8,7 @@ import javax.inject.Singleton
 trait ContractService {
     def save(contract: Contract): Option[Contract]
     def load(id: String): Option[Contract]
+    def list: Seq[Contract]
 }
 
 @Singleton
@@ -23,4 +24,6 @@ class ContractServiceInMemoryImpl extends ContractService {
     }
 
     override def load(id: String): Option[Contract] = storage.get(id)
+
+    override def list: Seq[Contract] = storage.values.toSeq.sortBy(_.number)
 }

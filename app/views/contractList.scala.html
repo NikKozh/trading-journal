@@ -1,0 +1,53 @@
+@import models.Contract
+
+@(contracts: Seq[Contract])
+
+@main("Торговый журнал: список сделок") {
+    <style>
+        th, td {
+            text-align: center;
+            padding: 5px;
+        }
+    </style>
+
+    <a href="@routes.ContractController.createContract">Создать сделку</a>
+    <br>
+    <h2>Список сделок</h2>
+    <br>
+    <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
+        <tr>
+            <th>№</th>
+            <th>Счёт</th>
+            <th>Дата</th>
+            <th>Экспирация</th>
+            <th>Актив</th>
+            <th>Прогноз</th>
+            <th>Вложение</th>
+            <th>%</th>
+            <th>Результат</th>
+            <th>Доход</th>
+            <th>Скрины?</th>
+            <th>Тэги</th>
+            <th>По ТС?</th>
+            <th>Описание</th>
+        </tr>
+        @for(c <- contracts){
+            <tr>
+                <td>@c.number</td>
+                <td>@c.contractType</td>
+                <td>@c.created.toLocalDateTime.toLocalDate</td>
+                <td>@c.expiration</td>
+                <td>@c.fxSymbol</td>
+                <td>@c.direction</td>
+                <td>@c.buyPrice</td>
+                <td>@c.profitPercent</td>
+                <td>@c.isWin</td>
+                <td>@c.income</td>
+                <td>не реализовано</td>
+                <td>@c.tags</td>
+                <td>@c.isCorrect</td>
+                <td>@c.description</td>
+            </tr>
+        }
+    </table>
+}
