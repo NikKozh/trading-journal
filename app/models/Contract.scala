@@ -1,7 +1,7 @@
 package models
 
 import java.sql.Timestamp
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import helpers.ContractHelper.ContractType._
 import helpers.ContractHelper.FxSymbol._
@@ -28,3 +28,17 @@ case class Contract(id: String = UUID.randomUUID().toString,
             percent <- profitPercent
         } yield if (isWin) price + price * percent else -price
 }
+
+case class ContractData(number: Int,
+                        contractType: String,
+                        created: Date, // TODO: потом при переводе в обычную сущность Contract надо будет конвертировать в Timestamp
+                        expiration: Int = 5,
+                        fxSymbol: String,
+                        direction: String,
+                        buyPrice: Double, // TODO: сделать опциональным (в т.ч. на самой форме)
+                        profitPercent: Double, // TODO: сделать опциональным (в т.ч. на самой форме)
+                        isWin: Boolean,
+                        // TODO: screenshotsIds, когда разберусь, как их сохранять и мапить
+                        tags: String,
+                        isCorrect: Boolean, // TODO: сделать опциональным (в т.ч. на самой форме)
+                        description: String)

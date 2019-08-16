@@ -1,10 +1,8 @@
 package helpers
 
-import java.sql.Timestamp
-import java.util.Date
-
-import play.api.data.Forms._
+import models.ContractData
 import play.api.data.Form
+import play.api.data.Forms._
 import play.api.data.format.Formats.doubleFormat
 
 object ContractHelper {
@@ -31,37 +29,21 @@ object ContractHelper {
         val PUT = Value("PUT")
     }
 
-    object ContractForm {
-        case class ContractData(number: Int,
-                                contractType: String,
-                                created: Date, // TODO: потом при переводе в обычную сущность Contract надо будет конвертировать в Timestamp
-                                expiration: Int = 5,
-                                fxSymbol: String,
-                                direction: String,
-                                buyPrice: Double, // TODO: сделать опциональным (в т.ч. на самой форме)
-                                profitPercent: Double, // TODO: сделать опциональным (в т.ч. на самой форме)
-                                isWin: Boolean,
-                                // TODO: screenshotsIds, когда разберусь, как их сохранять и мапить
-                                tags: String,
-                                isCorrect: Boolean, // TODO: сделать опциональным (в т.ч. на самой форме)
-                                description: String)
-
-        //noinspection TypeAnnotation
-        val form = Form[ContractData](
-            mapping(
-                "number" -> number,
-                "contractType" -> text,
-                "created" -> date,
-                "expiration" -> number,
-                "fxSymbol" -> text,
-                "direction" -> text,
-                "buyPrice" -> of[Double],
-                "profitPercent" -> of[Double],
-                "isWin" -> boolean,
-                "tags" -> text,
-                "isCorrect" -> boolean,
-                "description" -> text
-            )(ContractData.apply)(ContractData.unapply)
-        )
-    }
+    //noinspection TypeAnnotation
+    val contractForm = Form[ContractData](
+        mapping(
+            "number" -> number,
+            "contractType" -> text,
+            "created" -> date,
+            "expiration" -> number,
+            "fxSymbol" -> text,
+            "direction" -> text,
+            "buyPrice" -> of[Double],
+            "profitPercent" -> of[Double],
+            "isWin" -> boolean,
+            "tags" -> text,
+            "isCorrect" -> boolean,
+            "description" -> text
+        )(ContractData.apply)(ContractData.unapply)
+    )
 }
