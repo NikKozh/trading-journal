@@ -28,7 +28,8 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         contractForm.bindFromRequest.fold(
             errorForm => Future.successful(Ok(views.html.createContract(errorForm))),
             contractData =>
-                contractService.save(Contract(contractData)).map { _ =>
+                contractService.save(Contract.fill(contractData)).map { id =>
+                    println("id: " + id)
                     Redirect(routes.ContractController.contractList())
                 }
         )

@@ -17,7 +17,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
                     buyPrice: Option[Double], // в долларах
                     profitPercent: Option[Double], // от 0 до 1; потенциальный, обозначается даже в убыточных сделках
                     isWin: Boolean,
-                    screenshotsIds: Seq[String],
+                    screenshotsIds: String,
                     tags: String, // TODO: пока просто строкой с разделителем в виде запятой, потом надо разбить на Seq[String] или даже на Seq с отдельными объектами
                     isCorrect: Boolean, // вход по ТС? TODO: сделать опциональным
                     description: String) {
@@ -30,7 +30,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
 }
 
 object Contract {
-    def apply(dto: ContractData): Contract =
+    def fill(dto: ContractData): Contract =
         new Contract(
             number = dto.number,
             contractType = dto.contractType,
@@ -41,7 +41,7 @@ object Contract {
             buyPrice = Some(dto.buyPrice),
             profitPercent = Some(dto.profitPercent),
             isWin = dto.isWin,
-            screenshotsIds = Seq.empty, // TODO: не забыть здесь исправить, когда добавлю поле в dto
+            screenshotsIds = "", // TODO: не забыть здесь исправить, когда добавлю поле в dto
             tags = dto.tags,
             isCorrect = dto.isCorrect,
             description = dto.description
