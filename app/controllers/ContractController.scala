@@ -6,26 +6,31 @@ import play.api.mvc._
 import services.ContractService
 import models.{Contract, ContractData}
 
+import scala.concurrent.{ExecutionContext, Future}
+
 @Singleton
 class ContractController @Inject()(mcc: MessagesControllerComponents,
-                                   contractService: ContractService)
+                                   contractService: ContractService
+                                  )(implicit ec: ExecutionContext)
     extends MessagesAbstractController(mcc) {
 
-    def contractList: Action[AnyContent] = Action {
-        Ok(views.html.contractList(contractService.list))
+    def contractList: Action[AnyContent] = Action.async {
+        contractService.list.map(contracts =>
+            Ok(views.html.contractList(contracts))
+        )
     }
 
     def createContract: Action[AnyContent] = Action { implicit request =>
         Ok(views.html.createContract(contractForm))
     }
 
-    def submitContract: Action[AnyContent] = Action { implicit request =>
+    def submitContract: Action[AnyContent] = Action.async { implicit request =>
         contractForm.bindFromRequest.fold(
-            errors => BadRequest(views.html.createContract(errors)),
-            contractData => {
-                contractService.save(Contract(contractData))
-                Ok(views.html.contractList(contractService.list)) // TODO: заменить на вызов contractList
-            }
+            errorForm => Future.successful(Ok(views.html.createContract(errorForm))),
+            contractData =>
+                contractService.save(Contract(contractData)).map { _ =>
+                    Redirect(routes.ContractController.contractList())
+                }
         )
     }
 }
