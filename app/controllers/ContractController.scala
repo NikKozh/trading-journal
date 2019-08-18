@@ -21,17 +21,24 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     }
 
     def createContract: Action[AnyContent] = Action { implicit request =>
-        Ok(views.html.createContract(contractForm))
+        Ok(views.html.contractEdit(contractForm))
     }
 
     def submitContract: Action[AnyContent] = Action.async { implicit request =>
         contractForm.bindFromRequest.fold(
-            errorForm => Future.successful(Ok(views.html.createContract(errorForm))),
+            errorForm => Future.successful(Ok(views.html.contractEdit(errorForm))),
             contractData =>
                 contractService.save(Contract.fill(contractData)).map { id =>
                     println("id: " + id)
                     Redirect(routes.ContractController.contractList())
                 }
         )
+    }
+
+    def viewContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+        contractService.get(id).map {
+            case Some(contract) => Ok(views.html.contractCard(contract))
+            case None => NotFound
+        }
     }
 }

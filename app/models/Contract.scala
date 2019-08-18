@@ -27,6 +27,8 @@ case class Contract(id: String = UUID.randomUUID().toString,
             price <- buyPrice
             percent <- profitPercent
         } yield if (isWin) price + price * percent else -price
+
+    def screenshots: Seq[String] = Seq("Not implemented")
 }
 
 object Contract {

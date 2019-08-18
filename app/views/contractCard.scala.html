@@ -1,0 +1,14 @@
+@import models.Contract
+
+@(contract: Contract)
+
+<h1>Сделка №@contract.number</h1>
+<h2>Скриншоты:</h2>
+@for(screenshot <- contract.screenshots){
+    @screenshot
+}
+<br>
+<h2>Описание:</h2>
+@for(descLine <- contract.description.linesIterator){
+    <p>@descLine</p>
+}

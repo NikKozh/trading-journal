@@ -2,4 +2,6 @@ GET     /                           controllers.ContractController.contractList
 GET     /createContract             controllers.ContractController.createContract
 POST    /createContract             controllers.ContractController.submitContract
 
+GET     /viewContract/:id           controllers.ContractController.viewContract(id: String)
+
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

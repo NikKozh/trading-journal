@@ -81,7 +81,9 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
         (contracts returning contracts.map(_.id)) += contract
     }
 
-    override def get(id: String): Future[Option[Contract]] = ???
+    override def get(id: String): Future[Option[Contract]] = db.run {
+        contracts.filter(_.id === id).result.headOption
+    }
 
     override def list: Future[Seq[Contract]] = db.run {
         contracts.result

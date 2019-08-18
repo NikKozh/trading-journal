@@ -4,8 +4,6 @@
 @(form: Form[ContractData])(implicit request: MessagesRequestHeader)
 
 @main("Создание сделки") {
-    @* TODO: накинуть простую невидимую таблицу и туда отрендерить все поля через helper.form (после прототипа будет Bootstrap) *@
-
     @if(form.hasGlobalErrors) {
         <ul>
         @for(error <- form.globalErrors) {
