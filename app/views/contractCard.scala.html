@@ -5,7 +5,7 @@
 <h1>Сделка №@contract.number</h1>
 <h2>Скриншоты:</h2>
 @for(screenshot <- contract.screenshots){
-    @screenshot
+    <img src="@routes.Assets.versioned(s"/images/$screenshot")" alt="Contract screenshot">
 }
 <br>
 <h2>Описание:</h2>

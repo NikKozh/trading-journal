@@ -10,7 +10,7 @@
         }
     </style>
 
-    <a href="@routes.ContractController.createContract">Создать сделку</a>
+    <a href="@routes.ContractController.addEditContract()">Создать сделку</a>
     <br>
     <h2>Список сделок</h2>
     <br>
@@ -28,6 +28,7 @@
             <th>Доход</th>
             <th>Тэги</th>
             <th>По ТС?</th>
+            <th>Действия</th>
         </tr>
         @for(c <- contracts){
             <tr>
@@ -43,6 +44,7 @@
                 <td>@c.income</td>
                 <td>@c.tags</td>
                 <td>@c.isCorrect</td>
+                <td><a href="@routes.ContractController.addEditContract(Some(c.id))">Редактировать</a></td>
             </tr>
         }
     </table>

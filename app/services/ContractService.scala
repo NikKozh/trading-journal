@@ -12,7 +12,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 trait ContractService {
-    def save(contract: Contract): Future[String]
+    def save(contract: Contract): Future[Option[Contract]]
     def get(id: String): Future[Option[Contract]]
     def list: Future[Seq[Contract]]
 }
@@ -24,9 +24,9 @@ class ContractServiceInMemoryImpl extends ContractService {
     /**
      * В т.ч. пока работает как update
      */
-    override def save(contract: Contract): Future[String] = {
+    override def save(contract: Contract): Future[Option[Contract]] = {
         storage += contract.id -> contract
-        Future.successful(contract.id)
+        Future.successful(Some(contract))
     }
 
     override def get(id: String): Future[Option[Contract]] = Future(storage.get(id))(scala.concurrent.ExecutionContext.global)
@@ -42,7 +42,7 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
     import profile.api._
 
     private class ContractTable(tag: Tag) extends Table[Contract](tag, "Contract") {
-        def id = column[String]("id")
+        def id = column[String]("id", O.PrimaryKey)
         def number = column[Int]("number")
         def contractType = column[String]("contractType")
         def created = column[Timestamp]("created")
@@ -77,8 +77,8 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
 
     private val contracts = TableQuery[ContractTable]
 
-    override def save(contract: Contract): Future[String] = db.run {
-        (contracts returning contracts.map(_.id)) += contract
+    override def save(contract: Contract): Future[Option[Contract]] = db.run {
+        (contracts returning contracts).insertOrUpdate(contract)
     }
 
     override def get(id: String): Future[Option[Contract]] = db.run {

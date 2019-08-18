@@ -11,4 +11,8 @@ libraryDependencies += "com.typesafe.play" %% "play-slick" % "4.0.2"
 libraryDependencies += "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2"
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.5"
 
+libraryDependencies += "commons-io" % "commons-io" % "2.6"
+
+scalacOptions += "-language:postfixOps"
+
 // unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )

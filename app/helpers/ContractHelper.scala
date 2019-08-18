@@ -41,6 +41,7 @@ object ContractHelper {
             "buyPrice" -> of[Double],
             "profitPercent" -> of[Double],
             "isWin" -> boolean,
+            "screenshotUrls" -> text,
             "tags" -> text,
             "isCorrect" -> boolean,
             "description" -> text

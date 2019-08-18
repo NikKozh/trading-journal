@@ -1,7 +1,7 @@
 @import models.ContractData
 @import helper._
 
-@(form: Form[ContractData])(implicit request: MessagesRequestHeader)
+@(form: Form[ContractData], idForUpdate: Option[String] = None)(implicit request: MessagesRequestHeader)
 
 @main("Создание сделки") {
     @if(form.hasGlobalErrors) {
@@ -13,7 +13,7 @@
         <br>
     }
 
-    @helper.form(routes.ContractController.submitContract()) {
+    @helper.form(routes.ContractController.submitContract(idForUpdate)) {
         @CSRF.formField
         <style>
             table {
@@ -49,9 +49,10 @@
             <tr>
                 <td>@helper.inputText(form("tags"), '_label -> "Тэги (включая фибо-уровень и пользу индикаторов)")</td>
                 <td>@helper.checkbox(form("isCorrect"), '_label -> "Вход по ТС?")</td>
-                <td>@helper.textarea(form("description"), '_label -> "Описание сделки", 'rows -> 10, 'cols -> 50)</td>
+                <td>@helper.inputText(form("screenshotUrls"), '_label -> "URL скриншота")</td>
             </tr>
         </table>
+        @helper.textarea(form("description"), '_label -> "Описание сделки", 'rows -> 10, 'cols -> 50)
         <br>
         <div class="button-wrapper">
             <button>Создать сделку</button>
