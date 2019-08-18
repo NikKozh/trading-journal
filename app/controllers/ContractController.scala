@@ -1,5 +1,7 @@
 package controllers
 
+import java.util.UUID
+
 import helpers.ContractHelper._
 import helpers.ScreenshotHelper
 import javax.inject._
@@ -41,15 +43,21 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             errorForm => Future.successful(Ok(views.html.contractEdit(errorForm))),
             contractData => {
                 val contract = idForUpdate.map(id => Contract.fill(contractData).copy(id = id)).getOrElse(Contract.fill(contractData))
-                val screenshot =
-                    if (contract.screenshotsIds.nonEmpty) {
-                        val path = env.rootPath + af.assetsBasePath + "/images/" + contract.id + ".png"
-                        ScreenshotHelper.screenshotFromUrl(contract.screenshotsIds, path)
+                val screenshotPaths: Seq[String] =
+                    if (contract.screenshotPaths.nonEmpty) {
+                        val urls = contract.screenshotPaths.split(';')
+                        urls.map { url =>
+                            val screenshotId = UUID.randomUUID().toString
+                            val path = env.rootPath + af.assetsBasePath + "/images/" + screenshotId + ".png"
+                            ScreenshotHelper.screenshotFromUrl(url, path)
+                            screenshotId + ".png"
+                        }
+                    } else {
+                        Seq.empty
                     }
-                    else None
 
-                println("screenshot: " + FilenameUtils.getName(contract.screenshotsIds))
-                val finalContract = screenshot.map(s => contract.copy(screenshotsIds = FilenameUtils.getName(s.getPath))).getOrElse(contract)
+                println("screenshots: " + screenshotPaths)
+                val finalContract = contract.copy(screenshotPaths = screenshotPaths.mkString(";"))
 
                 contractService.save(finalContract).map { contractOpt => // None если update, Some если insert
                     println("id: " + finalContract.id)

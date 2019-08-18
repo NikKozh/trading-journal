@@ -52,7 +52,7 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
         def buyPrice = column[Option[Double]]("buyPrice")
         def profitPercent = column[Option[Double]]("profitPercent")
         def isWin = column[Boolean]("isWin")
-        def screenshotsIds = column[String]("screenshotsIds")
+        def screenshotPaths = column[String]("screenshotPaths")
         def tags = column[String]("tags")
         def isCorrect = column[Boolean]("isCorrect")
         def description = column[String]("description")
@@ -68,7 +68,7 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
             buyPrice,
             profitPercent,
             isWin,
-            screenshotsIds,
+            screenshotPaths,
             tags,
             isCorrect,
             description

@@ -8,6 +8,8 @@
     <img src="@routes.Assets.versioned(s"/images/$screenshot")" alt="Contract screenshot">
 }
 <br>
+<h2>В плюс? @contract.isWin</h2>
+<h2>Факторы: @contract.tags</h2>
 <h2>Описание:</h2>
 @for(descLine <- contract.description.linesIterator){
     <p>@descLine</p>
