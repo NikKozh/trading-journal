@@ -49,7 +49,11 @@
             <tr>
                 <td>@helper.inputText(form("tags"), '_label -> "Тэги (включая фибо-уровень и пользу индикаторов)")</td>
                 <td>@helper.checkbox(form("isCorrect"), '_label -> "Вход по ТС?")</td>
-                <td>@helper.inputText(form("screenshotUrls"), '_label -> "URL скриншота")</td>
+                @if(idForUpdate.isDefined) {
+                    <td>@helper.inputText(form("screenshotUrls"), '_label -> "URL скриншота", 'hidden -> "true")</td>
+                } else {
+                    <td>@helper.inputText(form("screenshotUrls"), '_label -> "URL скриншота")</td>
+                }
             </tr>
         </table>
         @helper.textarea(form("description"), '_label -> "Описание сделки", 'rows -> 10, 'cols -> 50)

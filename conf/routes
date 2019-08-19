@@ -1,4 +1,8 @@
 GET     /                           controllers.ContractController.contractList
+
+GET     /addContractDraft           controllers.ContractController.addContractDraft()
+POST    /submitContractDraft        controllers.ContractController.submitContractDraft()
+
 GET     /addEditContract            controllers.ContractController.addEditContract(id: Option[String] ?= None)
 POST    /addEditContract            controllers.ContractController.submitContract(idForUpdate: Option[String] ?= None)
 

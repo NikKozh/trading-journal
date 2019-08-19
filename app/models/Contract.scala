@@ -33,7 +33,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
 
 object Contract {
     def fill(dto: ContractData): Contract =
-        new Contract(
+        Contract(
             number = dto.number,
             contractType = dto.contractType,
             created = Timestamp.from(dto.created.toInstant),

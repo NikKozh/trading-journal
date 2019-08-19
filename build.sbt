@@ -13,6 +13,8 @@ libraryDependencies += "org.postgresql" % "postgresql" % "42.2.5"
 
 libraryDependencies += "commons-io" % "commons-io" % "2.6"
 
+libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.4.2"
+
 scalacOptions += "-language:postfixOps"
 
 // unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )

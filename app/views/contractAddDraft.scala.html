@@ -1,0 +1,21 @@
+@import models.ContractDraftData
+@import helper._
+
+@(form: Form[ContractDraftData])(implicit request: MessagesRequestHeader)
+
+@main("Автозаполнение сделки") {
+    @if(form.hasGlobalErrors) {
+        <ul>
+        @for(error <- form.globalErrors) {
+            <li>@error.format</li>
+        }
+        </ul>
+        <br>
+    }
+
+    @helper.form(routes.ContractController.submitContractDraft()) {
+        @CSRF.formField
+        @helper.inputText(form("screenshotsUrls"), '_label -> "Скриншоты сделки через точку с запятой")
+        <button>Отправить</button>
+    }
+}

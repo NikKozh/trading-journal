@@ -1,15 +1,18 @@
 package controllers
 
+import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 
 import helpers.ContractHelper._
+import helpers.OcrHelper._
 import helpers.ScreenshotHelper
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
-import models.{Contract, ContractData}
+import models.{Contract, ContractData, ContractDraftData}
 import play.api.Environment
-import org.apache.commons.io.FilenameUtils
+import scalaj.http.Http
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,37 +33,35 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     def addEditContract(id: Option[String] = None): Action[AnyContent] = Action.async { implicit request =>
         id.map {
             contractService.get(_).map {
-                case Some(contract) => Ok(views.html.contractEdit(contractForm.fill(ContractData(contract)), id))
+                case Some(contract) => Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), id))
                 case None => NotFound
             }
         }.getOrElse {
-            Future.successful(Ok(views.html.contractEdit(contractForm)))
+            Future.successful(Ok(views.html.contractAddEdit(contractForm)))
         }
     }
 
     def submitContract(idForUpdate: Option[String] = None): Action[AnyContent] = Action.async { implicit request =>
         contractForm.bindFromRequest.fold(
-            errorForm => Future.successful(Ok(views.html.contractEdit(errorForm))),
+            errorForm => Future.successful(BadRequest(views.html.contractAddEdit(errorForm))),
             contractData => {
-                val contract = idForUpdate.map(id => Contract.fill(contractData).copy(id = id)).getOrElse(Contract.fill(contractData))
-                val screenshotPaths: Seq[String] =
-                    if (contract.screenshotPaths.nonEmpty) {
-                        val urls = contract.screenshotPaths.split(';')
+                val contract = idForUpdate.map { newId =>
+                    Contract.fill(contractData).copy(id = newId)
+                }.getOrElse {
+                    val urls = contractData.screenshotUrls.split(';').toSeq
+                    val newScreenshotPaths =
                         urls.map { url =>
                             val screenshotId = UUID.randomUUID().toString
                             val path = env.rootPath + af.assetsBasePath + "/images/" + screenshotId + ".png"
-                            ScreenshotHelper.screenshotFromUrl(url, path)
+                            // ScreenshotHelper.screenshotFromUrl(url, path)
                             screenshotId + ".png"
                         }
-                    } else {
-                        Seq.empty
-                    }
 
-                println("screenshots: " + screenshotPaths)
-                val finalContract = contract.copy(screenshotPaths = screenshotPaths.mkString(";"))
+                    Contract.fill(contractData).copy(screenshotPaths = newScreenshotPaths.mkString(";"))
+                }
 
-                contractService.save(finalContract).map { contractOpt => // None если update, Some если insert
-                    println("id: " + finalContract.id)
+                contractService.save(contract).map { contractOpt => // None если update, Some если insert
+                    println("id: " + contract.id)
                     Redirect(routes.ContractController.contractList())
                 }
             }
@@ -72,5 +73,49 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             case Some(contract) => Ok(views.html.contractCard(contract))
             case None => NotFound
         }
+    }
+
+    def addContractDraft(): Action[AnyContent] = Action { implicit request =>
+        Ok(views.html.contractAddDraft(ContractDraftData.form))
+    }
+
+    def submitContractDraft(): Action[AnyContent] = Action.async { implicit request =>
+        ContractDraftData.form.bindFromRequest.fold(
+            errorForm => Future.successful(BadRequest(views.html.contractAddDraft(errorForm))),
+            contractDraftData => {
+                val urls = contractDraftData.screenshotsUrls.split(';').toSeq
+                val newScreenshotPaths =
+                    urls.map { url =>
+                        val screenshotId = UUID.randomUUID().toString
+                        val path = env.rootPath + af.assetsBasePath + "/images/" + screenshotId + ".png"
+                        ScreenshotHelper.screenshotFromUrl(url, path)
+                        screenshotId + ".png"
+                    }
+                val ocrResult = Http("https://api.ocr.space/parse/imageurl").params("apikey" -> "ee03921ca788957", "url" -> urls.head).asString
+                // val parsedOcrResult = parseOcrResult(ocrResult.body.toLowerCase)
+                val parsedOcrResult = "OCR result: " + ocrResult.body
+                val contractNumber = contractService.list.map(_.map(_.number).max + 1)
+
+                contractNumber.map { newNumber =>
+                    val contract = Contract(
+                        number = newNumber,
+                        contractType = "",
+                        created = Timestamp.from(Instant.now),
+                        expiration = 5,
+                        fxSymbol = "",
+                        direction = "",
+                        buyPrice = Some(0),
+                        profitPercent = Some(0),
+                        isWin = false,
+                        screenshotPaths = newScreenshotPaths.mkString(";"), // TODO: в строке на самом деле несколько путей, разделённых точкой с запятой
+                        tags = "",
+                        isCorrect = false,
+                        description = parsedOcrResult
+                    )
+
+                    Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), Some(contract.id)))
+                }
+            }
+        )
     }
 }
