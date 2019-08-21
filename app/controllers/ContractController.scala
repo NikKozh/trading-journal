@@ -13,7 +13,6 @@ import services.ContractService
 import models.{Contract, ContractData, ContractDraftData}
 import play.api.Environment
 import scalaj.http.Http
-
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -92,8 +91,8 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         screenshotId + ".png"
                     }
                 val ocrResult = Http("https://api.ocr.space/parse/imageurl").params("apikey" -> "ee03921ca788957", "url" -> urls.head).asString
-                // val parsedOcrResult = parseOcrResult(ocrResult.body.toLowerCase)
-                val parsedOcrResult = "OCR result: " + ocrResult.body
+                val ocrContractData = parseOcrResult(ocrResult.body)
+                val parsedOcrResult = "OCR result: " + ocrResult.body.toLowerCase
                 val contractNumber = contractService.list.map(_.map(_.number).max + 1)
 
                 contractNumber.map { newNumber =>
