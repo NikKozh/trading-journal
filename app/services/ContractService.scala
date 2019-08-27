@@ -77,6 +77,7 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
 
     private val contracts = TableQuery[ContractTable]
 
+    // None if an update was performed and Some if the operation was insert
     override def save(contract: Contract): Future[Option[Contract]] = db.run {
         (contracts returning contracts).insertOrUpdate(contract)
     }

@@ -1,0 +1,61 @@
+@import helpers.OcrHelper.OcrContractData
+
+@import java.time.temporal.ChronoField
+@import java.time.ZoneOffset
+@(ocrContractData: OcrContractData)
+
+@dateFrom = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atTime(00, 00).toEpochSecond(ZoneOffset.UTC).toString.take(10) }
+@dateTo   = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atTime(23, 59).toEpochSecond(ZoneOffset.UTC).toString.take(10) }
+
+<script>
+        var ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=***REMOVED***');
+
+        ws.onopen = function(evt) {
+            console.log("ws open, sending auth request...");
+            ws.send(JSON.stringify({authorize: '9wB0Mo5iy5ZfRk3'}));
+        };
+
+        ws.onmessage = function(msg) {
+            console.log("got response!");
+            var data = JSON.parse(msg.data);
+
+            if (data.authorize) {
+                console.log("auth success, sending profit table request...");
+                ws.send(JSON.stringify({
+                    profit_table: 1,
+                    description: 1,
+                    limit: 25,
+                    sort: 'ASC',
+                    date_from: '@dateFrom',
+                    date_to: '@dateTo'
+                }))
+            } else if (data.profit_table) {
+                console.log("profit table success, sending response to backend...");
+
+                var result = {
+                    contract_id: '@ocrContractData.contractId',
+                    fx_symbol: '@ocrContractData.fxSymbol.get',
+                    date: '@ocrContractData.screenshotDate.get',
+                    table: data.profit_table
+                };
+                console.log("result: ", result);
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", '@routes.ContractController.submitProfitTable()', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send(JSON.stringify(result));
+                xhr.onload = function() {
+                    console.log("got response from backend: ", this.responseText);
+                    var response = this.responseText;
+
+                    if (!response.startsWith("Error")) {
+                        window.location.replace(response);
+                    } else {
+                        alert("Error from backend: " + response);
+                    }
+                };
+            } else {
+                console.log("can't get norm data, some error");
+                alert("can't get norm data, some error");
+            }
+        };
+</script>

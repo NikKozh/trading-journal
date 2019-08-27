@@ -9,7 +9,7 @@ import helpers.ContractHelper.ContractDirection._
 
 case class Contract(id: String = UUID.randomUUID().toString,
                     number: Int,
-                    contractType: String, // TODO: ContractType
+                    contractType: String = "Демо", // TODO: ContractType
                     created: Timestamp,
                     expiration: Int = 5, // в минутах
                     fxSymbol: String, // TODO: FxSymbol
