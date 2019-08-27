@@ -1,4 +1,5 @@
 @import models.Contract
+@import helpers.ContractHelper._
 
 @(contracts: Seq[Contract])
 
@@ -40,10 +41,10 @@
                 <td>@c.expiration</td>
                 <td>@c.fxSymbol</td>
                 <td>@c.direction</td>
-                <td>@c.buyPrice</td>
-                <td>@c.profitPercent</td>
+                <td>@c.buyPrice.round2</td>
+                <td>@c.profitPercent.round3</td>
                 <td><a href="@routes.ContractController.viewContract(c.id)">@c.isWin</a></td>
-                <td>@c.income</td>
+                <td>@c.income.round2</td>
                 <td>@c.tags</td>
                 <td>@c.isCorrect</td>
                 <td><a href="@routes.ContractController.addEditContract(Some(c.id))">Редактировать</a></td>
