@@ -27,7 +27,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
 
     def contractList: Action[AnyContent] = Action.async {
         contractService.list.map(contracts =>
-            Ok(views.html.contractList(contracts))
+            Ok(views.html.contractList(contracts.sortBy(_.number)))
         )
     }
 
@@ -125,7 +125,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     def submitProfitTable(): Action[AnyContent] = Action.async { implicit request =>
         request.body.asJson.map { js =>
             val contractId = (js \ "contract_id").as[String]
-            val date = Timestamp.valueOf((js \ "date").as[String])
+            val date = Timestamp.valueOf((js \ "date").as[String]).getTime / 1000 // чтобы из миллисекунд получить секунды и корректно сравнить с временем сделки из Бинари (там секунды)
             val fxSymbol = (js \ "fx_symbol").as[String] // не используется, т.к. заполняется на предыдущем этапе, но на всякий случай оставил
             val transactions = (js \ "table" \ "transactions").get match {
                 case ts: JsArray => ts.value.map { case jsObject: JsObject =>
@@ -143,7 +143,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
 
             contractService.get(contractId).flatMap {
                 case Some(contract) =>
-                    val updatedContract = transactions.sortBy(_.time).reverse.find(_.time < date.getTime).map { data =>
+                    val updatedContract = transactions.sortBy(_.time).reverse.find(_.time < date).map { data =>
                         val direction = data.shortCode.split('_')(0)
                         if (direction != "CALL" && direction != "PUT") sys.error("Can't parse direction from js transaction!")
 
