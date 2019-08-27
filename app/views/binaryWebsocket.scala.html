@@ -7,6 +7,8 @@
 @dateFrom = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atTime(00, 00).toEpochSecond(ZoneOffset.UTC).toString.take(10) }
 @dateTo   = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atTime(23, 59).toEpochSecond(ZoneOffset.UTC).toString.take(10) }
 
+Идёт обращение к Binary.com и последующая обработка на бэкенде, сейчас будет редирект...
+
 <script>
         var ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=***REMOVED***');
 

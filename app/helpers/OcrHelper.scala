@@ -1,7 +1,7 @@
 package helpers
 
 import java.sql.Timestamp
-import java.time.{Month, ZoneId, ZonedDateTime}
+import java.time.{Instant, Month, ZoneId, ZonedDateTime}
 
 object OcrHelper {
     def parseOcrResult(contractId: String, json: String): OcrContractData = {
@@ -26,7 +26,7 @@ object OcrHelper {
             val monthString = if (monthNumber < 10) "0" + monthNumber else monthNumber.toString
             // 2007-12-03T10:15:30+01:00
             val preparedString = s"${r("year")}-$monthString-${r("day")}T${r("hours")}:${r("minutes")}:${r("seconds")}${r("timezone")}:00"
-            val dateTimeInGMT = ZonedDateTime.parse(preparedString).withZoneSameInstant(ZoneId.of("GMT")).toInstant
+            val dateTimeInGMT = ZonedDateTime.parse(preparedString).toInstant
 
             Timestamp.from(dateTimeInGMT)
         }
