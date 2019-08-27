@@ -4,15 +4,15 @@ import java.sql.Timestamp
 import java.time.{Month, ZoneId, ZonedDateTime}
 
 object OcrHelper {
-    def parseOcrResult(json: String): OcrContractData = {
+    def parseOcrResult(contractId: String, json: String): OcrContractData = {
         val lowerJson = json.toLowerCase
         val date = parseRawOcrDate(lowerJson)
         val symbol = parseRawOcrFxSymbol(lowerJson)
 
-        OcrContractData(date, symbol)
+        OcrContractData(contractId, date, symbol)
     }
 
-    case class OcrContractData(screenshotDate: Option[Timestamp], fxSymbol: Option[String])
+    case class OcrContractData(contractId: String, screenshotDate: Option[Timestamp], fxSymbol: Option[String])
 
     // "Month DD, YEAR HH:MM:SS +TZ" -> Option[Timestamp in GMT]
     private def parseRawOcrDate(rawString: String): Option[Timestamp] = {

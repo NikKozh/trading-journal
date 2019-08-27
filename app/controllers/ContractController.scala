@@ -1,18 +1,20 @@
 package controllers
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, Month}
 import java.util.UUID
 
 import helpers.ContractHelper._
 import helpers.OcrHelper._
-import helpers.ScreenshotHelper
+import helpers.{BinaryHelper, ScreenshotHelper}
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
 import models.{Contract, ContractData, ContractDraftData}
 import play.api.Environment
+import play.api.libs.json.{JsArray, JsObject}
 import scalaj.http.Http
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -32,7 +34,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     def addEditContract(id: Option[String] = None): Action[AnyContent] = Action.async { implicit request =>
         id.map {
             contractService.get(_).map {
-                case Some(contract) => Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), id))
+                case Some(contract) => Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), id, Some(contract)))
                 case None => NotFound
             }
         }.getOrElse {
@@ -82,6 +84,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         ContractDraftData.form.bindFromRequest.fold(
             errorForm => Future.successful(BadRequest(views.html.contractAddDraft(errorForm))),
             contractDraftData => {
+                val contractId = UUID.randomUUID().toString
                 val urls = contractDraftData.screenshotsUrls.split(';').toSeq
                 val newScreenshotPaths =
                     urls.map { url =>
@@ -90,18 +93,20 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         ScreenshotHelper.screenshotFromUrl(url, path)
                         screenshotId + ".png"
                     }
-                val ocrResult = Http("https://api.ocr.space/parse/imageurl").params("apikey" -> "ee03921ca788957", "url" -> urls.head).asString
-                val ocrContractData = parseOcrResult(ocrResult.body)
-                val parsedOcrResult = "OCR result: " + ocrResult.body.toLowerCase
+                val ocrResult =
+                    Http("https://api.ocr.space/parse/imageurl")
+                        .params("apikey" -> "ee03921ca788957", "url" -> urls.head)
+                        .timeout(10_000, 20_000)
+                        .asString
+                val ocrContractData = parseOcrResult(contractId, ocrResult.body)
                 val contractNumber = contractService.list.map(_.map(_.number).max + 1)
 
-                contractNumber.map { newNumber =>
+                contractNumber.flatMap { newNumber =>
                     val contract = Contract(
+                        id = contractId,
                         number = newNumber,
-                        contractType = "",
-                        created = Timestamp.from(Instant.now),
-                        expiration = 5,
-                        fxSymbol = "",
+                        created = ocrContractData.screenshotDate.getOrElse(Timestamp.from(Instant.now)),
+                        fxSymbol = ocrContractData.fxSymbol.getOrElse(""),
                         direction = "",
                         buyPrice = Some(0),
                         profitPercent = Some(0),
@@ -109,12 +114,74 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         screenshotPaths = newScreenshotPaths.mkString(";"), // TODO: в строке на самом деле несколько путей, разделённых точкой с запятой
                         tags = "",
                         isCorrect = false,
-                        description = parsedOcrResult
+                        description = ""
                     )
-
-                    Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), Some(contract.id)))
+                    contractService.save(contract).map(_ => Ok(views.html.binaryWebsocket(ocrContractData)))
                 }
             }
         )
     }
+
+    def submitProfitTable(): Action[AnyContent] = Action.async { implicit request =>
+        request.body.asJson.map { js =>
+            val contractId = (js \ "contract_id").as[String]
+            val date = Timestamp.valueOf((js \ "date").as[String])
+            val fxSymbol = (js \ "fx_symbol").as[String] // не используется, т.к. заполняется на предыдущем этапе, но на всякий случай оставил
+            val transactions = (js \ "table" \ "transactions").get match {
+                case ts: JsArray => ts.value.map { case jsObject: JsObject =>
+                    val fields = jsObject.fields.toMap
+                    ContractTransactionData(
+                        fields("buy_price").as[Double],
+                        fields("longcode").as[String],
+                        fields("payout").as[Double],
+                        fields("sell_price").as[Double],
+                        fields("shortcode").as[String],
+                        fields("sell_time").as[Long]
+                    )
+                }
+            }
+
+            contractService.get(contractId).flatMap {
+                case Some(contract) =>
+                    val updatedContract = transactions.sortBy(_.time).reverse.find(_.time < date.getTime).map { data =>
+                        val direction = data.shortCode.split('_')(0)
+                        if (direction != "CALL" && direction != "PUT") sys.error("Can't parse direction from js transaction!")
+
+                        val profitPercent = (data.payout - data.buyPrice) / data.buyPrice
+
+                        val isWin = data.sellPrice > 0
+
+                        val expiration = """spot at (\d+)""".r.findFirstMatchIn(data.longCode).map(
+                            _.group(1).toIntOption.getOrElse(sys.error("Can't parse Int from regex expiration search in js transaction's longcode!"))
+                        ).getOrElse(sys.error("Can't found regex expiration in js transaction's longcode!"))
+
+                        contract.copy(
+                            expiration = expiration,
+                            direction = direction,
+                            buyPrice = Some(data.buyPrice),
+                            profitPercent = Some(profitPercent),
+                            isWin = isWin
+                        )
+                    }.getOrElse(sys.error("Error: can't find this contract time in js transactions"))
+
+                    contractService.save(updatedContract).map { c =>
+                        if (c.isDefined) BadRequest("Error: contract was created, not updated")
+                        else Ok(s"/editPrefillContract/$contractId")
+                    }
+
+                case _ => Future.successful(BadRequest("Error: can't find contract in DB"))
+            }
+        } getOrElse {
+            Future.successful(BadRequest("Error: can't get body as json"))
+        }
+    }
+
+    def editPrefillContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+        contractService.get(id).map {
+            case Some(contract) => Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), Some(id), Some(contract)))
+            case _ => BadRequest("Can't find prefilled contract")
+        }
+    }
 }
+
+case class ContractTransactionData(buyPrice: Double, longCode: String, payout: Double, sellPrice: Double, shortCode: String, time: Long)
