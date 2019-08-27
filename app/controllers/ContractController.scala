@@ -1,7 +1,7 @@
 package controllers
 
 import java.sql.Timestamp
-import java.time.{Instant, LocalDateTime, Month}
+import java.time.{Instant, LocalDateTime, Month, ZoneId, ZoneOffset}
 import java.util.UUID
 
 import helpers.ContractHelper._
@@ -158,8 +158,8 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         contract.copy(
                             expiration = expiration,
                             direction = direction,
-                            buyPrice = Some(data.buyPrice),
-                            profitPercent = Some(profitPercent),
+                            buyPrice = Some(data.buyPrice.round2),
+                            profitPercent = Some(profitPercent.round3),
                             isWin = isWin
                         )
                     }.getOrElse(sys.error("Error: can't find this contract time in js transactions"))

@@ -47,4 +47,14 @@ object ContractHelper {
             "description" -> text
         )(ContractData.apply)(ContractData.unapply)
     )
+
+    implicit class DoubleWithRounding(x: Double) {
+        def round2: Double = BigDecimal(x).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+        def round3: Double = BigDecimal(x).setScale(3, BigDecimal.RoundingMode.HALF_UP).toDouble
+    }
+
+    implicit class OptDoubleWithRounding(x: Option[Double]) {
+        def round2: Option[Double] = x.map(BigDecimal(_).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
+        def round3: Option[Double] = x.map(BigDecimal(_).setScale(3, BigDecimal.RoundingMode.HALF_UP).toDouble)
+    }
 }

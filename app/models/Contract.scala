@@ -3,6 +3,7 @@ package models
 import java.sql.Timestamp
 import java.util.{Date, UUID}
 
+import helpers.ContractHelper._
 import helpers.ContractHelper.ContractType._
 import helpers.ContractHelper.FxSymbol._
 import helpers.ContractHelper.ContractDirection._
@@ -26,7 +27,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
         for {
             price <- buyPrice
             percent <- profitPercent
-        } yield if (isWin) price + price * percent else -price
+        } yield (if (isWin) price + price * percent else -price).round2
 
     def screenshots: Seq[String] = screenshotPaths.split(';')
 }
@@ -40,8 +41,8 @@ object Contract {
             expiration = dto.expiration,
             fxSymbol = dto.fxSymbol,
             direction = dto.direction,
-            buyPrice = Some(dto.buyPrice),
-            profitPercent = Some(dto.profitPercent),
+            buyPrice = Some(dto.buyPrice.round2),
+            profitPercent = Some(dto.profitPercent.round3),
             isWin = dto.isWin,
             screenshotPaths = dto.screenshotUrls, // TODO: в строке на самом деле несколько путей, разделённых точкой с запятой
             tags = dto.tags,
@@ -73,8 +74,8 @@ object ContractData {
             expiration = contract.expiration,
             fxSymbol = contract.fxSymbol,
             direction = contract.direction,
-            buyPrice = contract.buyPrice.getOrElse(0),
-            profitPercent = contract.profitPercent.getOrElse(0),
+            buyPrice = contract.buyPrice.getOrElse(0.0).round2,
+            profitPercent = contract.profitPercent.getOrElse(0.0).round3,
             isWin = contract.isWin,
             screenshotUrls = contract.screenshotPaths,
             tags = contract.tags,
