@@ -96,7 +96,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                 val ocrResult =
                     Http("https://api.ocr.space/parse/imageurl")
                         .params("apikey" -> "ee03921ca788957", "url" -> urls.head)
-                        .timeout(10_000, 20_000)
+                        .timeout(120_000, 120_000)
                         .asString
                 val ocrContractData = parseOcrResult(contractId, ocrResult.body)
                 val contractNumber = contractService.list.map(_.map(_.number).max + 1)
