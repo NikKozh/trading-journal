@@ -88,11 +88,23 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         ScreenshotHelper.screenshotFromUrlToBase64(url).getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
                     }
                 val ocrResult =
-                    Http("https://api.ocr.space/parse/imageurl")
-                        .params("apikey" -> "ee03921ca788957", "url" -> urls.head)
-                        .timeout(120_000, 120_000)
+                    Http("https://api.apiden.com/ocr")
+                        .postData(
+                            s"""
+                              |{
+                              |  "apiKey": "50b17e806879e3d0366cd691a84933f8",
+                              |  "language": "eng",
+                              |  "outputFormat": "text",
+                              |  "fileBase64": "${newScreenshotPaths.head}"
+                              |}
+                              |""".stripMargin
+                        )
+                        .header("content-type", "application/json")
+                        .timeout(20_000, 20_000)
                         .asString
-                val ocrContractData = parseOcrResult(contractId, ocrResult.body)
+                        .throwError
+                        .body
+                val ocrContractData = parseOcrResult(contractId, ocrResult)
                 val contractNumber = contractService.list.map(_.map(_.number).maxOption.getOrElse(0) + 1)
 
                 contractNumber.flatMap { newNumber =>
@@ -137,7 +149,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
 
             contractService.get(contractId).flatMap {
                 case Some(contract) =>
-                    val updatedContract = transactions.sortBy(_.time).reverse.find(_.time < date).map { data =>
+                    val updatedContract = transactions.sortBy(_.time).reverse.find(_.time < date).map { data => // TODO: добавить фильтрацию по FX Symbol (когда OCR будет понадёжнее, а то щас не распознаёт)
                         val direction = data.shortCode.split('_')(0)
                         if (direction != "CALL" && direction != "PUT") sys.error("Can't parse direction from js transaction!")
 
@@ -149,8 +161,15 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                             _.group(1).toIntOption.getOrElse(sys.error("Can't parse Int from regex expiration search in js transaction's longcode!"))
                         ).getOrElse(sys.error("Can't found regex expiration in js transaction's longcode!"))
 
+                        val fxSymbol =
+                            if (contract.fxSymbol.isEmpty || (contract.fxSymbol != "USD/JPY" && contract.fxSymbol != "EUR/USD")) // TODO: опять же хардкод пар, нужен константный список
+                                """[A-Z]{3}/[A-Z]{3}""".r.findFirstIn(data.longCode).getOrElse(sys.error("Error: can't parse fx symbol neither from OCR or binary transaction!"))
+                            else
+                                contract.fxSymbol
+
                         contract.copy(
                             expiration = expiration,
+                            fxSymbol = fxSymbol,
                             direction = direction,
                             buyPrice = Some(data.buyPrice.round2),
                             profitPercent = Some(profitPercent.round3),
