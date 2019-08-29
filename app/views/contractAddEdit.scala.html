@@ -16,8 +16,8 @@
     @contractForUpdate.map { contract =>
         <h1>Сделка №@contract.number</h1>
         <h2>Скриншоты:</h2>
-        @for(screenshot <- contract.screenshots){
-            <img src="@routes.Assets.versioned(s"/images/$screenshot")" alt="Contract screenshot">
+        @for(screenshotBase64String <- contract.screenshots){
+            <img src="data:image/png;base64,@screenshotBase64String" alt="Contract screenshot" />
         }
         <br>
     }
