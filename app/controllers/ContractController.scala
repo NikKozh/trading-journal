@@ -52,10 +52,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                     val urls = contractData.screenshotUrls.split(';').toSeq
                     val newScreenshotPaths =
                         urls.map { url =>
-                            val screenshotId = UUID.randomUUID().toString
-                            val path = env.rootPath + af.assetsBasePath + "/images/" + screenshotId + ".png"
-                            // ScreenshotHelper.screenshotFromUrl(url, path)
-                            screenshotId + ".png"
+                            ScreenshotHelper.screenshotFromUrlToBase64(url).getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
                         }
 
                     Contract.fill(contractData).copy(screenshotPaths = newScreenshotPaths.mkString(";"))
@@ -88,15 +85,12 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                 val urls = contractDraftData.screenshotsUrls.split(';').toSeq
                 val newScreenshotPaths =
                     urls.map { url =>
-                        val screenshotId = UUID.randomUUID().toString
-                        val path = env.rootPath + af.assetsBasePath + "/images/" + screenshotId + ".png"
-                        ScreenshotHelper.screenshotFromUrl(url, path)
-                        screenshotId + ".png"
+                        ScreenshotHelper.screenshotFromUrlToBase64(url).getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
                     }
                 val ocrResult =
                     Http("https://api.ocr.space/parse/imageurl")
                         .params("apikey" -> "ee03921ca788957", "url" -> urls.head)
-                        .timeout(10_000, 20_000)
+                        .timeout(120_000, 120_000)
                         .asString
                 val ocrContractData = parseOcrResult(contractId, ocrResult.body)
                 val contractNumber = contractService.list.map(_.map(_.number).max + 1)
