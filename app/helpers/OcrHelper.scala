@@ -7,7 +7,7 @@ object OcrHelper {
     def parseOcrResult(contractId: String, json: String): OcrContractData = {
         val lowerJson = json.toLowerCase
         val date = parseRawOcrDate(lowerJson)
-        val symbol = parseRawOcrFxSymbol(lowerJson)
+        val symbol = parseRawOcrFxSymbol(lowerJson).filter(s => s == "USD/JPY" || s == "EUR/USD") // TODO: слишком жёсткая логика, сделать через список возможных пар
 
         OcrContractData(contractId, date, symbol)
     }
