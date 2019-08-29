@@ -93,7 +93,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         .timeout(120_000, 120_000)
                         .asString
                 val ocrContractData = parseOcrResult(contractId, ocrResult.body)
-                val contractNumber = contractService.list.map(_.map(_.number).max + 1)
+                val contractNumber = contractService.list.map(_.map(_.number).maxOption.getOrElse(0) + 1)
 
                 contractNumber.flatMap { newNumber =>
                     val contract = Contract(
