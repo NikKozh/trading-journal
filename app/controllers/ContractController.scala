@@ -132,7 +132,6 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         request.body.asJson.map { js =>
             val contractId = (js \ "contract_id").as[String]
             val date = Timestamp.valueOf((js \ "date").as[String]).getTime / 1000 // чтобы из миллисекунд получить секунды и корректно сравнить с временем сделки из Бинари (там секунды)
-            val fxSymbol = (js \ "fx_symbol").as[String] // не используется, т.к. заполняется на предыдущем этапе, но на всякий случай оставил
             val transactions = (js \ "table" \ "transactions").get match {
                 case ts: JsArray => ts.value.map { case jsObject: JsObject =>
                     val fields = jsObject.fields.toMap
