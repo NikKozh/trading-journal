@@ -73,6 +73,13 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         }
     }
 
+    def deleteContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+        contractService.delete(id).map {
+            case true => Redirect(routes.ContractController.contractList())
+            case false => NotFound
+        }
+    }
+
     def addContractDraft(): Action[AnyContent] = Action { implicit request =>
         Ok(views.html.contractAddDraft(ContractDraftData.form))
     }

@@ -9,10 +9,14 @@ import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ContractService {
+    /** В т.ч. пока работает как update
+     *  @return None если апдейт, Some если вставка */
     def save(contract: Contract): Future[Option[Contract]]
+    /** @return удалили или нет */
+    def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean]
     def get(id: String): Future[Option[Contract]]
     def list: Future[Seq[Contract]]
 }
@@ -21,13 +25,12 @@ trait ContractService {
 class ContractServiceInMemoryImpl extends ContractService {
     private val storage: mutable.Map[String, Contract] = mutable.Map.empty
 
-    /**
-     * В т.ч. пока работает как update
-     */
     override def save(contract: Contract): Future[Option[Contract]] = {
         storage += contract.id -> contract
         Future.successful(Some(contract))
     }
+
+    override def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean] = ???
 
     override def get(id: String): Future[Option[Contract]] = Future(storage.get(id))(scala.concurrent.ExecutionContext.global)
 
@@ -77,9 +80,14 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
 
     private val contracts = TableQuery[ContractTable]
 
-    // None if an update was performed and Some if the operation was insert
     override def save(contract: Contract): Future[Option[Contract]] = db.run {
         (contracts returning contracts).insertOrUpdate(contract)
+    }
+
+    override def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean] = db.run {
+        contracts.filter(_.id === id).delete.map( deletedRows =>
+            if (deletedRows > 0) true else false
+        )
     }
 
     override def get(id: String): Future[Option[Contract]] = db.run {
