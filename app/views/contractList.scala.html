@@ -47,8 +47,18 @@
                 <td>@c.income.round2</td>
                 <td>@c.tags</td>
                 <td>@c.isCorrect</td>
-                <td><a href="@routes.ContractController.addEditContract(Some(c.id))">Редактировать</a></td>
+                <td>
+                    <div><a href="@routes.ContractController.addEditContract(Some(c.id))">Редактировать</a></div>
+                    <div><a onclick="deletingConfirm('@{c.id}')" href="javascript:void(0);">Удалить</a></div>
+                </td>
             </tr>
         }
     </table>
 }
+
+<script>
+    function deletingConfirm(id) {
+        if (confirm("Удаляем сделку! Уверен?"))
+            window.location.assign("/deleteContract/" + id)
+    }
+</script>
