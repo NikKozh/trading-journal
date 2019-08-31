@@ -73,6 +73,13 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         }
     }
 
+    def deleteContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+        contractService.delete(id).map {
+            case true => Redirect(routes.ContractController.contractList())
+            case false => NotFound
+        }
+    }
+
     def addContractDraft(): Action[AnyContent] = Action { implicit request =>
         Ok(views.html.contractAddDraft(ContractDraftData.form))
     }
@@ -93,7 +100,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         .timeout(120_000, 120_000)
                         .asString
                 val ocrContractData = parseOcrResult(contractId, ocrResult.body)
-                val contractNumber = contractService.list.map(_.map(_.number).max + 1)
+                val contractNumber = contractService.list.map(_.map(_.number).maxOption.getOrElse(0) + 1)
 
                 contractNumber.flatMap { newNumber =>
                     val contract = Contract(
