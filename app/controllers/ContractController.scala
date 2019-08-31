@@ -52,7 +52,10 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                     val urls = contractData.screenshotUrls.split(';').toSeq
                     val newScreenshotPaths =
                         urls.map { url =>
-                            ScreenshotHelper.screenshotFromUrlToBase64(url).getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
+                            ScreenshotHelper
+                                .screenshotFromUrlToBase64(url)
+                                .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
+                                ._1 // возвращаем fullImage TODO: заменить потом tuple на простенький кейс-класс, чтобы было понятнее
                         }
 
                     Contract.fill(contractData).copy(screenshotPaths = newScreenshotPaths.mkString(";"))
@@ -90,10 +93,14 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             contractDraftData => {
                 val contractId = UUID.randomUUID().toString
                 val urls = contractDraftData.screenshotsUrls.split(';').toSeq
-                val newScreenshotPaths =
-                    urls.map { url =>
-                        ScreenshotHelper.screenshotFromUrlToBase64(url).getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
+                val (screenshotForOCR, newScreenshotPaths) = {
+                    val result = urls.map { url =>
+                        ScreenshotHelper
+                            .screenshotFromUrlToBase64(url)
+                            .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
                     }
+                    (result.head._2, result.map(_._1)) // (firstCropImage, Seq[fullImage]) TODO: заменить tuple на кейс-класс
+                }
                 val ocrResult =
                     Http("https://api.ocr.space/parse/imageurl")
                         .params("apikey" -> "ee03921ca788957", "url" -> urls.head)
