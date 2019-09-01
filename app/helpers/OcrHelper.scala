@@ -1,9 +1,39 @@
 package helpers
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.util.Base64
 import java.sql.Timestamp
-import java.time.{Instant, Month, ZoneId, ZonedDateTime}
+import java.time.{Month, ZonedDateTime}
+import java.util.UUID
+
+import scalaj.http.{Http, MultiPart}
+import com.sksamuel.scrimage._
+import com.sksamuel.scrimage.filter.{SharpenFilter, ThresholdFilter}
+import javax.imageio.ImageIO
+import play.api.libs.json._
 
 object OcrHelper {
+    def getOcrResult(base64ImageString: String): String = {
+        val id = UUID.randomUUID().toString
+
+        val originalImageBytes = Base64.getDecoder.decode(base64ImageString)
+        val originalImageStream = new ByteArrayInputStream(originalImageBytes)
+
+        val updatedImageInputStream = Image.fromStream(originalImageStream).scale(2).filter(SharpenFilter).filter(ThresholdFilter(200)).stream
+        val updateImageOutputStream = new ByteArrayOutputStream()
+        ImageIO.write(ImageIO.read(updatedImageInputStream), "png", updateImageOutputStream)
+        val updateImageBytes = updateImageOutputStream.toByteArray
+
+        val httpResult =
+            Http("https://licenta-ocr-parser.herokuapp.com/upload")
+                .postMulti(MultiPart("picture", "screenshot.png", "image/png", updateImageBytes))
+                .timeout(20000, 20000)
+                .asString
+                .throwError
+                .body
+        (Json.parse(httpResult) \ "text").asOpt[String].getOrElse(sys.error("Can't get json text from OCR service (connect was successful)"))
+    }
+
     def parseOcrResult(contractId: String, json: String): OcrContractData = {
         val lowerJson = json.toLowerCase
         val date = parseRawOcrDate(lowerJson)
