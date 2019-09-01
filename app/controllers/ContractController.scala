@@ -101,13 +101,9 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                     }
                     (result.head._2, result.map(_._1)) // (firstCropImage, Seq[fullImage]) TODO: заменить tuple на кейс-класс
                 }
-                val ocrResult =
-                    Http("https://api.ocr.space/parse/imageurl")
-                        .params("apikey" -> "ee03921ca788957", "url" -> urls.head)
-                        .timeout(120_000, 120_000)
-                        .asString
-                val ocrContractData = parseOcrResult(contractId, ocrResult.body)
-                val contractNumber = contractService.list.map(_.map(_.number).maxOption.getOrElse(0) + 1)
+                val ocrResult = getOcrResult(screenshotForOCR)
+                val ocrContractData = parseOcrResult(contractId, ocrResult)
+                val contractNumber = contractService.list.map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
 
                 contractNumber.flatMap { newNumber =>
                     val contract = Contract(
@@ -160,7 +156,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         val isWin = data.sellPrice > 0
 
                         val expiration = """spot at (\d+)""".r.findFirstMatchIn(data.longCode).map(
-                            _.group(1).toIntOption.getOrElse(sys.error("Can't parse Int from regex expiration search in js transaction's longcode!"))
+                            _.group(1).toInt
                         ).getOrElse(sys.error("Can't found regex expiration in js transaction's longcode!"))
 
                         contract.copy(
