@@ -52,7 +52,10 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                     val urls = contractData.screenshotUrls.split(';').toSeq
                     val newScreenshotPaths =
                         urls.map { url =>
-                            ScreenshotHelper.screenshotFromUrlToBase64(url).getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
+                            ScreenshotHelper
+                                .screenshotFromUrlToBase64(url)
+                                .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
+                                ._1 // возвращаем fullImage TODO: заменить потом tuple на простенький кейс-класс, чтобы было понятнее
                         }
 
                     Contract.fill(contractData).copy(screenshotPaths = newScreenshotPaths.mkString(";"))
@@ -73,6 +76,13 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         }
     }
 
+    def deleteContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+        contractService.delete(id).map {
+            case true => Redirect(routes.ContractController.contractList())
+            case false => NotFound
+        }
+    }
+
     def addContractDraft(): Action[AnyContent] = Action { implicit request =>
         Ok(views.html.contractAddDraft(ContractDraftData.form))
     }
@@ -83,29 +93,17 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             contractDraftData => {
                 val contractId = UUID.randomUUID().toString
                 val urls = contractDraftData.screenshotsUrls.split(';').toSeq
-                val newScreenshotPaths =
-                    urls.map { url =>
-                        ScreenshotHelper.screenshotFromUrlToBase64(url).getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
+                val (screenshotForOCR, newScreenshotPaths) = {
+                    val result = urls.map { url =>
+                        ScreenshotHelper
+                            .screenshotFromUrlToBase64(url)
+                            .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
                     }
-                val ocrResult =
-                    Http("https://api.apiden.com/ocr")
-                        .postData(
-                            s"""
-                              |{
-                              |  "apiKey": "50b17e806879e3d0366cd691a84933f8",
-                              |  "language": "eng",
-                              |  "outputFormat": "text",
-                              |  "fileBase64": "${newScreenshotPaths.head}"
-                              |}
-                              |""".stripMargin
-                        )
-                        .header("content-type", "application/json")
-                        .timeout(20_000, 20_000)
-                        .asString
-                        .throwError
-                        .body
+                    (result.head._2, result.map(_._1)) // (firstCropImage, Seq[fullImage]) TODO: заменить tuple на кейс-класс
+                }
+                val ocrResult = getOcrResult(screenshotForOCR)
                 val ocrContractData = parseOcrResult(contractId, ocrResult)
-                val contractNumber = contractService.list.map(_.map(_.number).maxOption.getOrElse(0) + 1)
+                val contractNumber = contractService.list.map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
 
                 contractNumber.flatMap { newNumber =>
                     val contract = Contract(
@@ -157,7 +155,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         val isWin = data.sellPrice > 0
 
                         val expiration = """spot at (\d+)""".r.findFirstMatchIn(data.longCode).map(
-                            _.group(1).toIntOption.getOrElse(sys.error("Can't parse Int from regex expiration search in js transaction's longcode!"))
+                            _.group(1).toInt
                         ).getOrElse(sys.error("Can't found regex expiration in js transaction's longcode!"))
 
                         val fxSymbol =
