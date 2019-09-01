@@ -1,4 +1,7 @@
 # trading-journal
+For now only prototype version is implemented.
+Latest version is on prototype-deploy branch.
+
 Used stuff:
 * https://github.com/sksamuel/scrimage for image processing
 * https://github.com/scalaj/scalaj-http for simpler work with HTTP
