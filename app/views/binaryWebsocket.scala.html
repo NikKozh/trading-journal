@@ -2,10 +2,11 @@
 
 @import java.time.temporal.ChronoField
 @import java.time.ZoneOffset
+@import java.time.ZoneId
 @(ocrContractData: OcrContractData)
 
-@dateFrom = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atTime(00, 00).toEpochSecond(ZoneOffset.UTC).toString.take(10) }
-@dateTo   = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atTime(23, 59).toEpochSecond(ZoneOffset.UTC).toString.take(10) }
+@dateFrom = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atStartOfDay(ZoneId.of("UTC")).toEpochSecond.toString.take(10) }
+@dateTo   = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atStartOfDay(ZoneId.of("UTC")).plusMinutes(60 * 23 + 59).toEpochSecond.toString.take(10) }
 
 Идёт обращение к Binary.com и последующая обработка на бэкенде, сейчас будет редирект...
 
