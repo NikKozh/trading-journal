@@ -1,4 +1,6 @@
 # trading-journal
+Deployed on https://bo-trading-journal.herokuapp.com/
+
 For now only prototype version is implemented.
 Latest version is on prototype-deploy branch.
 
