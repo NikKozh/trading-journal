@@ -19,7 +19,7 @@ object OcrHelper {
         val originalImageBytes = Base64.getDecoder.decode(base64ImageString)
         val originalImageStream = new ByteArrayInputStream(originalImageBytes)
 
-        val updatedImageInputStream = Image.fromStream(originalImageStream).scale(2.5).filter(SharpenFilter).filter(ThresholdFilter(200)).stream
+        val updatedImageInputStream = Image.fromStream(originalImageStream).scale(2.5).filter(SharpenFilter).filter(ThresholdFilter(220)).stream
         val updateImageOutputStream = new ByteArrayOutputStream()
         ImageIO.write(ImageIO.read(updatedImageInputStream), "png", updateImageOutputStream)
         val updateImageBytes = updateImageOutputStream.toByteArray
