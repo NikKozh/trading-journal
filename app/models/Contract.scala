@@ -27,7 +27,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
         for {
             price <- buyPrice
             percent <- profitPercent
-        } yield (if (isWin) price + price * percent else -price).round2
+        } yield (if (isWin) price * percent else -price).round2
 
     def screenshots: Seq[String] = screenshotPaths.split(';')
 }
