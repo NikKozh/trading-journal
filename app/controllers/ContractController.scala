@@ -158,9 +158,14 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
 
                         val isWin = data.sellPrice > 0
 
-                        val expiration = """spot at (\d+)""".r.findFirstMatchIn(data.longCode).map(
+                        val rawExpiration = """spot at (\d+)""".r.findFirstMatchIn(data.longCode).map(
                             _.group(1).toInt
                         ).getOrElse(sys.error("Can't found regex expiration in js transaction's longcode!"))
+                        val expiration =
+                            if (data.longCode.contains("hour"))
+                                rawExpiration * 60
+                            else
+                                rawExpiration
 
                         contract.copy(
                             expiration = expiration,
