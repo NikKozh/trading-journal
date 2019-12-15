@@ -95,6 +95,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             errorForm => Future.successful(BadRequest(views.html.contractAddDraft(errorForm))),
             contractDraftData => {
                 val contractId = UUID.randomUUID().toString
+                val transactionId = contractDraftData.transactionId
                 val urls = contractDraftData.screenshotsUrls.split(';').toSeq
                 val (screenshotForOCR, newScreenshotPaths) = {
                     val result = urls.map { url =>
@@ -123,7 +124,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         isCorrect = false,
                         description = ""
                     )
-                    contractService.save(contract).map(_ => Ok(views.html.binaryWebsocket(ocrContractData)))
+                    contractService.save(contract).map(_ => Ok(views.html.binaryWebsocket(ocrContractData, transactionId)))
                 }
             }
         )
@@ -134,6 +135,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             val contractId = (js \ "contract_id").as[String]
             val date = Timestamp.valueOf((js \ "date").as[String]).getTime / 1000 // чтобы из миллисекунд получить секунды и корректно сравнить с временем сделки из Бинари (там секунды)
             val fxSymbol = (js \ "fx_symbol").as[String] // не используется, т.к. заполняется на предыдущем этапе, но на всякий случай оставил
+            val transactionId = (js \ "transaction_id").as[String]
             val transactions = (js \ "table" \ "transactions").get match {
                 case ts: JsArray => ts.value.map { case jsObject: JsObject =>
                     val fields = jsObject.fields.toMap
@@ -143,14 +145,15 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                         fields("payout").as[Double],
                         fields("sell_price").as[Double],
                         fields("shortcode").as[String],
-                        fields("sell_time").as[Long]
+                        fields("sell_time").as[Long],
+                        fields("transaction_id").as[Long]
                     )
                 }
             }
 
             contractService.get(contractId).flatMap {
                 case Some(contract) =>
-                    val updatedContract = transactions.sortBy(_.time).reverse.find(_.time < date).map { data =>
+                    val updatedContract = transactions.find(_.transactionId.toString == transactionId).map { data =>
                         val direction = data.shortCode.split('_')(0)
                         if (direction != "CALL" && direction != "PUT") sys.error("Can't parse direction from js transaction!")
 
@@ -235,4 +238,10 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         }
 }
 
-case class ContractTransactionData(buyPrice: Double, longCode: String, payout: Double, sellPrice: Double, shortCode: String, time: Long)
+case class ContractTransactionData(buyPrice: Double,
+                                   longCode: String,
+                                   payout: Double,
+                                   sellPrice: Double,
+                                   shortCode: String,
+                                   time: Long,
+                                   transactionId: Long)

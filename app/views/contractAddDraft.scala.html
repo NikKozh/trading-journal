@@ -16,6 +16,9 @@
     @helper.form(routes.ContractController.submitContractDraft()) {
         @CSRF.formField
         @helper.inputText(form("screenshotsUrls"), '_label -> "Скриншоты сделки через точку с запятой")
+        <br>
+        @helper.inputText(form("transactionId"), '_label -> "Id контракта с сайта Бинари")
+        <br>
         <button>Отправить</button>
     }
 }

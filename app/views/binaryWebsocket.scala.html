@@ -3,7 +3,7 @@
 @import java.time.temporal.ChronoField
 @import java.time.ZoneOffset
 @import java.time.ZoneId
-@(ocrContractData: OcrContractData)
+@(ocrContractData: OcrContractData, transactionId: String)
 
 @dateFrom = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atStartOfDay(ZoneId.of("UTC")).toEpochSecond.toString.take(10) }
 @dateTo   = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atStartOfDay(ZoneId.of("UTC")).plusMinutes(60 * 23 + 59).toEpochSecond.toString.take(10) }
@@ -39,7 +39,8 @@
                     contract_id: '@ocrContractData.contractId',
                     fx_symbol: '@ocrContractData.fxSymbol.get',
                     date: '@ocrContractData.screenshotDate.get',
-                    table: data.profit_table
+                    table: data.profit_table,
+                    transaction_id: '@transactionId'
                 };
                 console.log("result: ", result);
                 var xhr = new XMLHttpRequest();
