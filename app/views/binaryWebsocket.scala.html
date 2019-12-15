@@ -26,11 +26,7 @@
                 console.log("auth success, sending profit table request...");
                 ws.send(JSON.stringify({
                     profit_table: 1,
-                    description: 1,
-                    limit: 25,
-                    sort: 'ASC',
-                    date_from: '@dateFrom',
-                    date_to: '@dateTo'
+                    description: 1
                 }))
             } else if (data.profit_table) {
                 console.log("profit table success, sending response to backend...");
