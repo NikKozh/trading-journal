@@ -19,6 +19,9 @@ trait ContractService {
     def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean]
     def get(id: String): Future[Option[Contract]]
     def list: Future[Seq[Contract]]
+
+    def getNewNumber(implicit ec: ExecutionContext): Future[Int] =
+        list.map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
 }
 
 @Singleton
