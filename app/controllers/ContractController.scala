@@ -13,9 +13,9 @@ import services.ContractService
 import models.{Contract, ContractData, ContractDraftData}
 import play.api.Environment
 import play.api.libs.json.{JsArray, JsObject}
-import scalaj.http.Http
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ContractController @Inject()(mcc: MessagesControllerComponents,
@@ -25,24 +25,26 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                                   )(implicit ec: ExecutionContext)
     extends MessagesAbstractController(mcc) {
 
-    def contractList: Action[AnyContent] = Action.async {
+    def contractList: Action[AnyContent] = asyncActionWithExceptionPage {
         contractService.list.map(contracts =>
-            Ok(views.html.contractList(contracts.sortBy(_.number)))
+            Ok(views.html.contractList(contracts.sortBy(_.number).reverse))
         )
     }
 
-    def addEditContract(id: Option[String] = None): Action[AnyContent] = Action.async { implicit request =>
+    def addEditContract(id: Option[String] = None): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         id.map {
             contractService.get(_).map {
                 case Some(contract) => Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), id, Some(contract)))
                 case None => NotFound
             }
         }.getOrElse {
-            Future.successful(Ok(views.html.contractAddEdit(contractForm)))
+            contractService.getNewNumber.map { tm =>
+                Ok(views.html.contractAddEdit(contractForm.copy(data = contractForm.data + ("number" -> tm.toString))))
+            }
         }
     }
 
-    def submitContract(idForUpdate: Option[String] = None): Action[AnyContent] = Action.async { implicit request =>
+    def submitContract(idForUpdate: Option[String] = None): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         contractForm.bindFromRequest.fold(
             errorForm => Future.successful(BadRequest(views.html.contractAddEdit(errorForm))),
             contractData => {
@@ -58,6 +60,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                                 ._1 // возвращаем fullImage TODO: заменить потом tuple на простенький кейс-класс, чтобы было понятнее
                         }
 
+
                     Contract.fill(contractData).copy(screenshotPaths = newScreenshotPaths.mkString(";"))
                 }
 
@@ -69,25 +72,25 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         )
     }
 
-    def viewContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+    def viewContract(id: String): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         contractService.get(id).map {
             case Some(contract) => Ok(views.html.contractCard(contract))
             case None => NotFound
         }
     }
 
-    def deleteContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+    def deleteContract(id: String): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         contractService.delete(id).map {
             case true => Redirect(routes.ContractController.contractList())
             case false => NotFound
         }
     }
 
-    def addContractDraft(): Action[AnyContent] = Action { implicit request =>
+    def addContractDraft(): Action[AnyContent] = actionWithExceptionPage { implicit request =>
         Ok(views.html.contractAddDraft(ContractDraftData.form))
     }
 
-    def submitContractDraft(): Action[AnyContent] = Action.async { implicit request =>
+    def submitContractDraft(): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         ContractDraftData.form.bindFromRequest.fold(
             errorForm => Future.successful(BadRequest(views.html.contractAddDraft(errorForm))),
             contractDraftData => {
@@ -126,7 +129,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         )
     }
 
-    def submitProfitTable(): Action[AnyContent] = Action.async { implicit request =>
+    def submitProfitTable(): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         request.body.asJson.map { js =>
             val contractId = (js \ "contract_id").as[String]
             val date = Timestamp.valueOf((js \ "date").as[String]).getTime / 1000 // чтобы из миллисекунд получить секунды и корректно сравнить с временем сделки из Бинари (там секунды)
@@ -180,12 +183,51 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         }
     }
 
-    def editPrefillContract(id: String): Action[AnyContent] = Action.async { implicit request =>
+    def editPrefillContract(id: String): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         contractService.get(id).map {
             case Some(contract) => Ok(views.html.contractAddEdit(contractForm.fill(ContractData(contract)), Some(id), Some(contract)))
             case _ => BadRequest("Can't find prefilled contract")
         }
     }
+
+    private def asyncActionWithExceptionPage(block: MessagesRequest[AnyContent] => Future[Result]): Action[AnyContent] =
+        Action.async { implicit request =>
+            withExceptionPage {
+                Try {
+                    block(request)
+                }
+            }
+        }
+
+    private def asyncActionWithExceptionPage(block: =>Future[Result]): Action[AnyContent] =
+        Action.async {
+            withExceptionPage {
+                Try {
+                    block
+                }
+            }
+        }
+
+    private def withExceptionPage(tryBlock: Try[Future[Result]]): Future[Result] =
+        tryBlock match {
+            case Success(value) => value
+            case Failure(exception) => Future.successful(BadRequest(views.html.exceptionPage(exception.getMessage, exception)))
+        }
+
+    private def withExceptionPage(tryBlock: Try[Result]): Result =
+        tryBlock match {
+            case Success(value) => value
+            case Failure(exception) => BadRequest(views.html.exceptionPage(exception.getMessage, exception))
+        }
+
+    private def actionWithExceptionPage(block: MessagesRequest[AnyContent] => Result): Action[AnyContent] =
+        Action { implicit request =>
+            withExceptionPage {
+                Try {
+                    block(request)
+                }
+            }
+        }
 }
 
 case class ContractTransactionData(buyPrice: Double, longCode: String, payout: Double, sellPrice: Double, shortCode: String, time: Long)
