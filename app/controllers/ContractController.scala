@@ -10,7 +10,7 @@ import helpers.{BinaryHelper, ScreenshotHelper}
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
-import models.{Contract, ContractData, ContractDraftData}
+import models.{Contract, ContractData, ContractDraftData, ContractDraftRawData}
 import play.api.Environment
 import play.api.libs.json.{JsArray, JsObject}
 
@@ -90,44 +90,63 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         Ok(views.html.contractAddDraft(ContractDraftData.form))
     }
 
+    def addRawContractDraft(): Action[AnyContent] = actionWithExceptionPage { implicit request =>
+        Ok(views.html.contractAddRawDraft(ContractDraftRawData.form))
+    }
+
     def submitContractDraft(): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         ContractDraftData.form.bindFromRequest.fold(
             errorForm => Future.successful(BadRequest(views.html.contractAddDraft(errorForm))),
             contractDraftData => {
-                val contractId = UUID.randomUUID().toString
                 val transactionId = contractDraftData.transactionId
                 val urls = contractDraftData.screenshotsUrls.split(';').toSeq
-                val (screenshotForOCR, newScreenshotPaths) = {
-                    val result = urls.map { url =>
-                        ScreenshotHelper
-                            .screenshotFromUrlToBase64(url)
-                            .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
-                    }
-                    (result.head._2, result.map(_._1)) // (firstCropImage, Seq[fullImage]) TODO: заменить tuple на кейс-класс
-                }
-                val ocrResult = getOcrResult(screenshotForOCR)
-                val ocrContractData = parseOcrResult(contractId, ocrResult)
-                val contractNumber = contractService.list.map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
-
-                contractNumber.flatMap { newNumber =>
-                    val contract = Contract(
-                        id = contractId,
-                        number = newNumber,
-                        created = ocrContractData.screenshotDate.getOrElse(Timestamp.from(Instant.now)),
-                        fxSymbol = ocrContractData.fxSymbol.getOrElse(""),
-                        direction = "",
-                        buyPrice = Some(0),
-                        profitPercent = Some(0),
-                        isWin = false,
-                        screenshotPaths = newScreenshotPaths.mkString(";"), // TODO: в строке на самом деле несколько путей, разделённых точкой с запятой
-                        tags = "",
-                        isCorrect = false,
-                        description = ""
-                    )
-                    contractService.save(contract).map(_ => Ok(views.html.binaryWebsocket(ocrContractData, transactionId)))
-                }
+                parseContractDataAndSubmit(transactionId, urls)
             }
         )
+    }
+
+    def submitRawContractDraft(): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
+        ContractDraftRawData.form.bindFromRequest.fold(
+            errorForm => Future.successful(BadRequest(views.html.contractAddRawDraft(errorForm))),
+            contractDraftRawData => {
+                val lines = contractDraftRawData.raw.lines.toSeq
+                val (transactionId, urls) = (lines.head, lines.tail) // TODO: валидация
+                parseContractDataAndSubmit(transactionId, urls)
+            }
+        )
+    }
+
+    private def parseContractDataAndSubmit(transactionId: String, urls: Seq[String]): Future[Result] = {
+        val contractId = UUID.randomUUID().toString
+        val (screenshotForOCR, newScreenshotPaths) = {
+            val result = urls.map { url =>
+                ScreenshotHelper
+                    .screenshotFromUrlToBase64(url)
+                    .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
+            }
+            (result.head._2, result.map(_._1)) // (firstCropImage, Seq[fullImage]) TODO: заменить tuple на кейс-класс
+        }
+        val ocrResult = getOcrResult(screenshotForOCR)
+        val ocrContractData = parseOcrResult(contractId, ocrResult)
+        val contractNumber = contractService.list.map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
+
+        contractNumber.flatMap { newNumber =>
+            val contract = Contract(
+                id = contractId,
+                number = newNumber,
+                created = ocrContractData.screenshotDate.getOrElse(Timestamp.from(Instant.now)),
+                fxSymbol = ocrContractData.fxSymbol.getOrElse(""),
+                direction = "",
+                buyPrice = Some(0),
+                profitPercent = Some(0),
+                isWin = false,
+                screenshotPaths = newScreenshotPaths.mkString(";"), // TODO: в строке на самом деле несколько путей, разделённых точкой с запятой
+                tags = "",
+                isCorrect = false,
+                description = ""
+            )
+            contractService.save(contract).map(_ => Ok(views.html.binaryWebsocket(ocrContractData, transactionId)))
+        }
     }
 
     def submitProfitTable(): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
