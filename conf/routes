@@ -18,4 +18,6 @@ GET     /viewContract/:id           controllers.ContractController.viewContract(
 
 GET     /deleteContract/:id         controllers.ContractController.deleteContract(id: String)
 
+GET     /generalStats               controllers.StatsController.generalStats()
+
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

@@ -1,0 +1,18 @@
+@(content: Html)
+
+<style>
+    .header {
+        width: 100%;
+        height: 50px;
+    }
+    a {
+        font-weight: bold;
+        font-size: large;
+    }
+</style>
+
+<div class="header">
+    <a href="@routes.ContractController.contractList()">ГЛАВНАЯ</a> |
+    <a href="@routes.StatsController.generalStats()">СТАТИСТИКА</a>
+</div>
+@content
