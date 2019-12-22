@@ -3,7 +3,7 @@ package models
 import java.sql.Timestamp
 import java.util.{Date, UUID}
 
-import helpers.ContractHelper._
+import utils.Utils.Math._
 import helpers.ContractHelper.ContractType._
 import helpers.ContractHelper.FxSymbol._
 import helpers.ContractHelper.ContractDirection._
