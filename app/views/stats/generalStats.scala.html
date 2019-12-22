@@ -1,0 +1,36 @@
+@import models.stats.GeneralStatsDailyItem
+@import utils.Utils.Math._
+
+@(dailyItems: Seq[GeneralStatsDailyItem])
+
+@main("Общая статистика") {
+    <style>
+            th, td {
+                text-align: center;
+                padding: 5px;
+            }
+    </style>
+
+    <h2>По дням</h2>
+    <br>
+    <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
+        <tr>
+            <th>Дата</th>
+            <th>Сумма за день</th>
+            <th>Всего сделок</th>
+            <th>Сделки +</th>
+            <th>Сделки -</th>
+            <th>% успешных</th>
+        </tr>
+        @for(item <- dailyItems){
+            <tr>
+                <td>@item.day</td>
+                <td>@item.income.round2</td>
+                <td>@item.contractsCount</td>
+                <td>@item.winningContracts</td>
+                <td>@item.loosedContracts</td>
+                <td>@item.winRatePercent.round2%</td>
+            </tr>
+        }
+    </table>
+}
