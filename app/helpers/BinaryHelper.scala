@@ -56,7 +56,7 @@ object BinaryHelper {
         val outgoing = {
             Source.single(TextMessage {
                 println(s"$now sending message...")
-                s"""{"authorize": "9wB0Mo5iy5ZfRk3"}"""
+                s"""{"authorize": "f4wRdHzQPGmq03l"}"""
             })
         }
 
