@@ -11,3 +11,11 @@ case class GeneralStatsDailyItem(day: LocalDate,
     val loosedContracts: Int = contractsCount - winningContracts
     val winRatePercent: Double = (winningContracts * 100 / contractsCount).round2
 }
+
+case class GeneralStatsWeeklyItem(daysRange: (LocalDate, LocalDate),
+                                  income: Double,
+                                  contractsCount: Int,
+                                  winningContracts: Int) {
+    val loosedContracts: Int = contractsCount - winningContracts
+    val winRatePercent: Double = (winningContracts * 100 / contractsCount).round2
+}
