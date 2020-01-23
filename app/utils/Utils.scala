@@ -2,6 +2,7 @@ package utils
 
 import java.sql.Timestamp
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 object Utils {
     object Math {
@@ -19,5 +20,9 @@ object Utils {
     object DateTime {
         implicit def timestampOrdering: Ordering[Timestamp] = (x: Timestamp, y: Timestamp) => x compareTo y
         implicit def localDateOrdering: Ordering[LocalDate] = (x: LocalDate, y: LocalDate) => x compareTo y
+
+        implicit class LocalDateWithRusFormatting(d: LocalDate) {
+            def formatRus: String = d.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+        }
     }
 }
