@@ -1,36 +1,77 @@
 @import models.stats.GeneralStatsDailyItem
 @import utils.Utils.Math._
+@import utils.Utils.DateTime._
+@import models.stats.GeneralStatsWeeklyItem
 
-@(dailyItems: Seq[GeneralStatsDailyItem])
+@(dailyItems: Seq[GeneralStatsDailyItem], weeklyItems: Seq[GeneralStatsWeeklyItem])
 
 @main("Общая статистика") {
     <style>
-            th, td {
-                text-align: center;
-                padding: 5px;
-            }
+        th, td {
+            text-align: center;
+            padding: 5px;
+        }
+
+        #daily_stats, #weekly_stats {
+            width: 50%;
+        }
+
+        #daily_stats {
+            float: left;
+        }
+
+        #weekly_stats {
+            float: right;
+        }
     </style>
 
-    <h2>По дням</h2>
-    <br>
-    <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
-        <tr>
-            <th>Дата</th>
-            <th>Сумма за день</th>
-            <th>Всего сделок</th>
-            <th>Сделки +</th>
-            <th>Сделки -</th>
-            <th>% успешных</th>
-        </tr>
-        @for(item <- dailyItems){
+    <div id="daily_stats">
+        <h2>По дням</h2>
+        <br>
+        <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
             <tr>
-                <td>@item.day</td>
-                <td>@item.income.round2</td>
-                <td>@item.contractsCount</td>
-                <td>@item.winningContracts</td>
-                <td>@item.loosedContracts</td>
-                <td>@item.winRatePercent.round2%</td>
+                <th>Дата</th>
+                <th>Сумма за день</th>
+                <th>Всего сделок</th>
+                <th>Сделки +</th>
+                <th>Сделки -</th>
+                <th>% успешных</th>
             </tr>
-        }
-    </table>
+            @for(item <- dailyItems){
+                <tr>
+                    <td>@item.day.formatRus</td>
+                    <td>@item.income.round2</td>
+                    <td>@item.contractsCount</td>
+                    <td>@item.winningContracts</td>
+                    <td>@item.loosedContracts</td>
+                    <td>@item.winRatePercent.round2%</td>
+                </tr>
+            }
+        </table>
+    </div>
+
+    <div id="weekly_stats">
+        <h2>По неделям</h2>
+        <br>
+        <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
+            <tr>
+                <th>Диапазон дней</th>
+                <th>Сумма за неделю</th>
+                <th>Всего сделок</th>
+                <th>Сделки +</th>
+                <th>Сделки -</th>
+                <th>% успешных</th>
+            </tr>
+            @for(item <- weeklyItems){
+                <tr>
+                    <td>@item.daysRange._1.formatRus - @item.daysRange._2.formatRus</td>
+                    <td>@item.income.round2</td>
+                    <td>@item.contractsCount</td>
+                    <td>@item.winningContracts</td>
+                    <td>@item.loosedContracts</td>
+                    <td>@item.winRatePercent.round2%</td>
+                </tr>
+            }
+        </table>
+    </div>
 }

@@ -1,5 +1,6 @@
 @import models.Contract
 @import utils.Utils.Math._
+@import utils.Utils.DateTime._
 
 @(contracts: Seq[Contract])
 
@@ -39,7 +40,7 @@
             <tr>
                 <td>@c.number</td>
                 <td>@c.contractType</td>
-                <td>@c.created.toLocalDateTime.toLocalDate</td>
+                <td>@c.created.toLocalDateTime.toLocalDate.formatRus</td>
                 <td>@c.expiration</td>
                 <td>@c.fxSymbol</td>
                 <td>@c.direction</td>
