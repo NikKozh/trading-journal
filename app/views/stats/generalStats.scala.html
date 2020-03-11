@@ -2,8 +2,14 @@
 @import utils.Utils.Math._
 @import utils.Utils.DateTime._
 @import models.stats.GeneralStatsWeeklyItem
+@import models.user.UserSettingData
+@import views.html.stats.statsFilter
 
-@(dailyItems: Seq[GeneralStatsDailyItem], weeklyItems: Seq[GeneralStatsWeeklyItem])
+@(dailyItems: Seq[GeneralStatsDailyItem],
+    weeklyItems: Seq[GeneralStatsWeeklyItem],
+    userSettingForm: Form[UserSettingData],
+    strategyFilterOptions: Seq[(String, String)]
+)(implicit request: MessagesRequestHeader)
 
 @main("Общая статистика") {
     <style>
@@ -24,6 +30,11 @@
             float: right;
         }
     </style>
+
+    @statsFilter(userSettingForm, strategyFilterOptions)
+    <br>
+    <hr>
+    <br>
 
     <div id="daily_stats">
         <h2>По дням</h2>

@@ -5,6 +5,8 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.data.format.Formats.doubleFormat
 
+// TODO: Возможно, переделать это всё на обычные val'ы внутри объектов?
+// TODO: Возможно, перенести это всё в utils.Constants?
 object ContractHelper {
     //noinspection TypeAnnotation
     object ContractType extends Enumeration {

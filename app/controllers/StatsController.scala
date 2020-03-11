@@ -3,26 +3,35 @@ package controllers
 import java.time.{DayOfWeek, LocalDate}
 import java.time.temporal.WeekFields
 
+import helpers.UserSettingHelper
 import javax.inject.{Inject, Singleton}
+import models.Contract
 import models.stats.{GeneralStatsDailyItem, GeneralStatsWeeklyItem}
+import models.user.UserSettingData
 import utils.Utils.DateTime._
 import play.api.Environment
+import play.api.data.Form
 import play.api.mvc.{Action, AnyContent, MessagesAbstractController, MessagesControllerComponents}
-import services.ContractService
+import services.{ContractService, UserSettingsService}
 import utils.ExceptionHandler
+import utils.Utils.StringHelper
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 @Singleton
 class StatsController @Inject()(mcc: MessagesControllerComponents,
-                                contractService: ContractService,
                                 af: AssetsFinder,
-                                env: Environment
+                                env: Environment,
+                                contractService: ContractService,
+                                userSettingsService: UserSettingsService
                                )(implicit ec: ExecutionContext)
     extends ExceptionHandler(mcc) {
 
-    def generalStats(): Action[AnyContent] = asyncActionWithExceptionPage {
+    def generalStats(): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         contractService.list.map { contractList =>
+            val (userSettingForm, strategyFilterOptions) = getUserSettingFormAndInfo
+
             @scala.annotation.tailrec
             def findFirstDayOfTheWeekForDate(date: LocalDate): LocalDate =
                 if (date.getDayOfWeek == DayOfWeek.MONDAY) date
@@ -31,6 +40,25 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
             // TODO: стопроцентов это можно сделать как-то получше - подумать над этим
             val dailyStatsItems =
                 contractList
+                    .filter {
+                        val strategyFilterOpt =
+                            for {
+                                userSettingData <- userSettingForm.value
+                                strategyFilter <- userSettingData.strategyFilter
+                            } yield strategyFilter
+
+                        strategyFilterOpt
+                            .map(strategyFilter => {
+                                contract: Contract =>
+                                    contract
+                                        .tags
+                                        .split(';')
+                                        .headOption
+                                        .map(_.trim)
+                                        .contains(strategyFilter)
+                            })
+                            .getOrElse({ _ => true })
+                    }
                     .map(c => (c.created.toLocalDateTime.toLocalDate, c))
                     .groupBy(_._1)
                     .mapValues(_.map(_._2))
@@ -72,7 +100,39 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
                     .sortBy(_.daysRange._1)
                     .reverse
 
-            Ok(views.html.stats.generalStats(dailyStatsItems, weeklyStatsItems))
+            Ok(views.html.stats.generalStats(
+                dailyStatsItems,
+                weeklyStatsItems,
+                userSettingForm,
+                strategyFilterOptions
+            ))
         }
+    }
+
+    private def getUserSettingFormAndInfo: (Form[UserSettingData], Seq[(String, String)]) = {
+        val userSettingF = userSettingsService.get("0")
+        val contractListF = contractService.list
+
+        val (userSettingOpt, contractList) = Await.result(userSettingF.zip(contractListF), 10 seconds)
+
+        val form =
+            userSettingOpt
+                .map(UserSettingData.fill)
+                .map(UserSettingHelper.userSettingForm.fill)
+                .getOrElse(sys.error("Can't find UserSetting with id 0 in DataBase!"))
+
+        val options =
+            contractList
+                .flatMap(_
+                    .tags
+                    .split(';')
+                    .headOption
+                    .flatMap(StringHelper.trimToOption)
+                )
+                .distinct
+                .sorted
+                .map(str => str -> str)
+
+        (form, ("" -> "") +: options)
     }
 }

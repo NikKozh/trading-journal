@@ -20,4 +20,6 @@ GET     /deleteContract/:id         controllers.ContractController.deleteContrac
 
 GET     /generalStats               controllers.StatsController.generalStats()
 
+POST    /submitStrategyFilter       controllers.UserSettingController.submitStrategyFilter(backUrl: String)
+
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
