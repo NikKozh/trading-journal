@@ -25,4 +25,11 @@ object Utils {
             def formatRus: String = d.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
         }
     }
+
+    // TODO: Может, ему место всё-таки в пакете хелперов в отдельном файле?
+    // TODO: Сделать имплиситную версию
+    object StringHelper {
+        def trimToOption(s: String): Option[String] = trimToOption(Option(s))
+        def trimToOption(opt: Option[String]): Option[String] = opt.map(_.trim).filter(_.nonEmpty)
+    }
 }
