@@ -4,9 +4,13 @@
 @import models.stats.GeneralStatsWeeklyItem
 @import models.user.UserSettingData
 @import views.html.stats.statsFilter
+@import models.stats.GeneralStatsMonthlyItem
+@import java.time.format.TextStyle
+@import java.util.Locale
 
 @(dailyItems: Seq[GeneralStatsDailyItem],
     weeklyItems: Seq[GeneralStatsWeeklyItem],
+    monthlyItems: Seq[GeneralStatsMonthlyItem],
     userSettingForm: Form[UserSettingData],
     strategyFilterOptions: Seq[(String, String)]
 )(implicit request: MessagesRequestHeader)
@@ -18,71 +22,118 @@
             padding: 5px;
         }
 
-        #daily_stats, #weekly_stats {
-            width: 50%;
+        .column {
+            float: left;
+            width: 33.33%;
         }
 
-        #daily_stats {
-            float: left;
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
         }
 
         #weekly_stats {
-            float: right;
+            width: 32%;
+            padding-left: 5px;
+            padding-right: 5px;
         }
     </style>
 
     @statsFilter(userSettingForm, strategyFilterOptions)
+
     <br>
     <hr>
+
+    <h2>За всё время</h2>
+    Сумма: @dailyItems.map(_.income).sum.round2
     <br>
+    Всего сделок: @dailyItems.map(_.contractsCount).sum
+    <br>
+    Сделки +: @dailyItems.map(_.winningContracts).sum
+    <br>
+    Сделки -: @dailyItems.map(_.loosedContracts).sum
+    <br>
+    % успешных: @{(dailyItems.map(_.winningContracts).sum * 100 / dailyItems.map(_.contractsCount).sum).round2}%
 
-    <div id="daily_stats">
-        <h2>По дням</h2>
-        <br>
-        <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
-            <tr>
-                <th>Дата</th>
-                <th>Сумма за день</th>
-                <th>Всего сделок</th>
-                <th>Сделки +</th>
-                <th>Сделки -</th>
-                <th>% успешных</th>
-            </tr>
-            @for(item <- dailyItems){
-                <tr>
-                    <td>@item.day.formatRus</td>
-                    <td>@item.income.round2</td>
-                    <td>@item.contractsCount</td>
-                    <td>@item.winningContracts</td>
-                    <td>@item.loosedContracts</td>
-                    <td>@item.winRatePercent.round2%</td>
-                </tr>
-            }
-        </table>
-    </div>
+    <br>
+    <br>
+    <hr>
 
-    <div id="weekly_stats">
-        <h2>По неделям</h2>
-        <br>
-        <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
-            <tr>
-                <th>Диапазон дней</th>
-                <th>Сумма за неделю</th>
-                <th>Всего сделок</th>
-                <th>Сделки +</th>
-                <th>Сделки -</th>
-                <th>% успешных</th>
-            </tr>
-            @for(item <- weeklyItems){
+    <div class="row">
+        <div id="daily_stats" class="column">
+            <h2>По дням</h2>
+            <br>
+            <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
                 <tr>
-                    <td>@item.daysRange._1.formatRus - @item.daysRange._2.formatRus</td>
-                    <td>@item.income.round2</td>
-                    <td>@item.contractsCount</td>
-                    <td>@item.winningContracts</td>
-                    <td>@item.loosedContracts</td>
-                    <td>@item.winRatePercent.round2%</td>
+                    <th>Дата</th>
+                    <th>Сумма за день</th>
+                    <th>Всего сделок</th>
+                    <th>Сделки +</th>
+                    <th>Сделки -</th>
+                    <th>% успешных</th>
                 </tr>
-            }
-        </table>
+                @for(item <- dailyItems){
+                    <tr>
+                        <td>@item.day.formatRus</td>
+                        <td>@item.income.round2</td>
+                        <td>@item.contractsCount</td>
+                        <td>@item.winningContracts</td>
+                        <td>@item.loosedContracts</td>
+                        <td>@item.winRatePercent.round2%</td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+        <div id="weekly_stats" class="column">
+            <h2>По неделям</h2>
+            <br>
+            <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
+                <tr>
+                    <th>Диапазон дней</th>
+                    <th>Сумма за неделю</th>
+                    <th>Всего сделок</th>
+                    <th>Сделки +</th>
+                    <th>Сделки -</th>
+                    <th>% успешных</th>
+                </tr>
+                @for(item <- weeklyItems){
+                    <tr>
+                        <td>@item.daysRange._1.formatRus - @item.daysRange._2.formatRus</td>
+                        <td>@item.income.round2</td>
+                        <td>@item.contractsCount</td>
+                        <td>@item.winningContracts</td>
+                        <td>@item.loosedContracts</td>
+                        <td>@item.winRatePercent.round2%</td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+        <div id="monthly_stats" class="column">
+            <h2>По месяцам</h2>
+            <br>
+            <table border="1" width="100%" bgcolor="#FFFFFF" cellspacing="0" cellpadding="2">
+                <tr>
+                    <th>Месяц и год</th>
+                    <th>Сумма за месяц</th>
+                    <th>Всего сделок</th>
+                    <th>Сделки +</th>
+                    <th>Сделки -</th>
+                    <th>% успешных</th>
+                </tr>
+                @for(item <- monthlyItems){
+                    <tr>
+                        <td>@item.month.getMonth.getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault) @item.month.getYear</td>
+                        <td>@item.income.round2</td>
+                        <td>@item.contractsCount</td>
+                        <td>@item.winningContracts</td>
+                        <td>@item.loosedContracts</td>
+                        <td>@item.winRatePercent.round2%</td>
+                    </tr>
+                }
+            </table>
+        </div>
     </div>
 }

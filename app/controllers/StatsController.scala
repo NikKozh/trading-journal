@@ -6,7 +6,7 @@ import java.time.temporal.WeekFields
 import helpers.UserSettingHelper
 import javax.inject.{Inject, Singleton}
 import models.Contract
-import models.stats.{GeneralStatsDailyItem, GeneralStatsWeeklyItem}
+import models.stats.{GeneralStatsDailyItem, GeneralStatsMonthlyItem, GeneralStatsWeeklyItem}
 import models.user.UserSettingData
 import utils.Utils.DateTime._
 import play.api.Environment
@@ -100,9 +100,34 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
                     .sortBy(_.daysRange._1)
                     .reverse
 
+            val monthlyStatsItems =
+                dailyStatsItems
+                    .groupBy(_.day.getYear)
+                    .mapValues(_
+                        .groupBy(_.day.getMonth)
+                        .values
+                        .toSeq
+                        .map { dailyStatsItemsWithinMonth =>
+                            val anyDay = dailyStatsItemsWithinMonth.head.day
+
+                            GeneralStatsMonthlyItem(
+                                month = LocalDate.of(anyDay.getYear, anyDay.getMonth, 1),
+                                income = dailyStatsItemsWithinMonth.map(_.income).sum,
+                                contractsCount = dailyStatsItemsWithinMonth.map(_.contractsCount).sum,
+                                winningContracts = dailyStatsItemsWithinMonth.map(_.winningContracts).sum
+                            )
+                        }
+                    )
+                    .values
+                    .toSeq
+                    .flatten
+                    .sortBy(_.month)
+                    .reverse
+
             Ok(views.html.stats.generalStats(
                 dailyStatsItems,
                 weeklyStatsItems,
+                monthlyStatsItems,
                 userSettingForm,
                 strategyFilterOptions
             ))
