@@ -28,6 +28,8 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     extends ExceptionHandler(mcc) {
 
     def contractList: Action[AnyContent] = asyncActionWithExceptionPage {
+        import utils.Utils.DateTime._
+
         contractService.list.map(contracts =>
             Ok(views.html.contract.contractList(contracts.sortBy(_.created).reverse))
         )
