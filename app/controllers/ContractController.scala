@@ -29,7 +29,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
 
     def contractList: Action[AnyContent] = asyncActionWithExceptionPage {
         contractService.list.map(contracts =>
-            Ok(views.html.contract.contractList(contracts.sortBy(_.number).reverse))
+            Ok(views.html.contract.contractList(contracts.sortBy(_.created).reverse))
         )
     }
 
