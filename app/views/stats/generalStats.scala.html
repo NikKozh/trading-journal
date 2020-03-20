@@ -125,7 +125,7 @@
                 </tr>
                 @for(item <- monthlyItems){
                     <tr>
-                        <td>@item.month.getMonth.getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault) @item.month.getYear</td>
+                        <td>@item.month.getMonth.getDisplayName(TextStyle.FULL_STANDALONE, Locale.forLanguageTag("ru-RU")) @item.month.getYear</td>
                         <td>@item.income.round2</td>
                         <td>@item.contractsCount</td>
                         <td>@item.winningContracts</td>
