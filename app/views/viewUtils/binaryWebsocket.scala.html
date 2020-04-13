@@ -1,12 +1,4 @@
-@import helpers.OcrHelper.OcrContractData
-
-@import java.time.temporal.ChronoField
-@import java.time.ZoneOffset
-@import java.time.ZoneId
-@(ocrContractData: OcrContractData, transactionId: String)
-
-@dateFrom = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atStartOfDay(ZoneId.of("UTC")).toEpochSecond.toString.take(10) }
-@dateTo   = @{ ocrContractData.screenshotDate.get.toLocalDateTime.toLocalDate.atStartOfDay(ZoneId.of("UTC")).plusMinutes(60 * 23 + 59).toEpochSecond.toString.take(10) }
+@(transactionId: String, contractId: String)
 
 @main() {
     Идёт обращение к Binary.com и последующая обработка на бэкенде, сейчас будет редирект...
@@ -33,9 +25,7 @@
                     console.log("profit table success, sending response to backend...");
 
                     var result = {
-                        contract_id: '@ocrContractData.contractId',
-                        fx_symbol: '@ocrContractData.fxSymbol.get',
-                        date: '@ocrContractData.screenshotDate.get',
+                        contract_id: '@contractId',
                         table: data.profit_table,
                         transaction_id: '@transactionId'
                     };
