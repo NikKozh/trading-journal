@@ -5,8 +5,7 @@ import java.time.{Instant, LocalDateTime, Month, ZoneId, ZoneOffset}
 import java.util.UUID
 
 import helpers.ContractHelper._
-import helpers.OcrHelper._
-import helpers.{BinaryHelper, ScreenshotHelper}
+import helpers.{BinaryHelper, ContractHelper, ScreenshotHelper}
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
@@ -61,7 +60,6 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                             ScreenshotHelper
                                 .screenshotFromUrlToBase64(url)
                                 .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
-                                ._1 // возвращаем fullImage TODO: заменить потом tuple на простенький кейс-класс, чтобы было понятнее
                         }
 
 
@@ -122,24 +120,21 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
 
     private def parseContractDataAndSubmit(transactionId: String, urls: Seq[String]): Future[Result] = {
         val contractId = UUID.randomUUID().toString
-        val (screenshotForOCR, newScreenshotPaths) = {
-            val result = urls.map { url =>
+        val newScreenshotPaths = {
+            urls.map { url =>
                 ScreenshotHelper
                     .screenshotFromUrlToBase64(url)
                     .getOrElse(sys.error("Error: something wrong in saving screenshot from given URL or in converting saved image to Base64"))
             }
-            (result.head._2, result.map(_._1)) // (firstCropImage, Seq[fullImage]) TODO: заменить tuple на кейс-класс
         }
-        val ocrResult = getOcrResult(screenshotForOCR)
-        val ocrContractData = parseOcrResult(contractId, ocrResult)
         val contractNumber = contractService.list.map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
 
         contractNumber.flatMap { newNumber =>
             val contract = Contract(
                 id = contractId,
                 number = newNumber,
-                created = ocrContractData.screenshotDate.getOrElse(Timestamp.from(Instant.now)),
-                fxSymbol = ocrContractData.fxSymbol.getOrElse(""),
+                created = Timestamp.from(Instant.now),
+                fxSymbol = "",
                 direction = "",
                 buyPrice = Some(0),
                 profitPercent = Some(0),
@@ -149,15 +144,13 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                 isCorrect = false,
                 description = ""
             )
-            contractService.save(contract).map(_ => Ok(views.html.viewUtils.binaryWebsocket(ocrContractData, transactionId)))
+            contractService.save(contract).map(_ => Ok(views.html.viewUtils.binaryWebsocket(transactionId, contractId)))
         }
     }
 
     def submitProfitTable(): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         request.body.asJson.map { js =>
             val contractId = (js \ "contract_id").as[String]
-            val date = Timestamp.valueOf((js \ "date").as[String]).getTime / 1000 // чтобы из миллисекунд получить секунды и корректно сравнить с временем сделки из Бинари (там секунды)
-            val fxSymbol = (js \ "fx_symbol").as[String] // не используется, т.к. заполняется на предыдущем этапе, но на всякий случай оставил
             val transactionId = (js \ "transaction_id").as[String]
             val transactions = (js \ "table" \ "transactions").get match {
                 case ts: JsArray => ts.value.map { case jsObject: JsObject =>
@@ -178,7 +171,8 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                 case Some(contract) =>
                     val updatedContract = transactions.find(_.transactionId.toString == transactionId).map { data => // TODO: добавить фильтрацию по FX Symbol (когда OCR будет понадёжнее, а то щас не распознаёт)
                         val direction = data.shortCode.split('_')(0)
-                        if (direction != "CALL" && direction != "PUT") sys.error("Can't parse direction from js transaction!")
+                        if (!ContractHelper.ContractDirection.values.map(_.toString).contains(direction))
+                            sys.error("Can't parse direction from js transaction!")
 
                         val profitPercent = (data.payout - data.buyPrice) / data.buyPrice
 
@@ -186,18 +180,19 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
 
                         val rawExpiration = """spot at (\d+)""".r.findFirstMatchIn(data.longCode).map(
                             _.group(1).toInt
-                        ).getOrElse(sys.error("Can't found regex expiration in js transaction's longcode!"))
+                        ).getOrElse(sys.error("Can't found regexp expiration in js transaction's longcode!"))
                         val expiration =
                             if (data.longCode.contains("hour"))
                                 rawExpiration * 60
                             else
                                 rawExpiration
 
-                        val fxSymbol =
-                            if (contract.fxSymbol.isEmpty || (contract.fxSymbol != "USD/JPY" && contract.fxSymbol != "EUR/USD")) // TODO: опять же хардкод пар, нужен константный список
-                                """[A-Z]{3}/[A-Z]{3}""".r.findFirstIn(data.longCode).getOrElse(sys.error("Error: can't parse fx symbol neither from OCR or binary transaction!"))
-                            else
-                                contract.fxSymbol
+                        val fxSymbol = """payout if (\w+/\w+)""".r.findFirstMatchIn(data.longCode).map(
+                            _.group(1)
+                        ).getOrElse(sys.error("Can't found regexp fx symbol in js transaction's longcode"))
+
+                        if (!ContractHelper.FxSymbol.values.map(_.toString).contains(fxSymbol))
+                            sys.error("Can't parse fx symbol from js transaction!")
 
                         contract.copy(
                             expiration = expiration,
@@ -207,14 +202,14 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                             profitPercent = Some(profitPercent.round3),
                             isWin = isWin
                         )
-                    }.getOrElse(sys.error("Error: can't find this contract time in js transactions"))
+                    }.getOrElse(sys.error(s"Error: can't find transaction $transactionId in js transactions"))
 
                     contractService.save(updatedContract).map { c =>
                         if (c.isDefined) BadRequest("Error: contract was created, not updated")
                         else Ok(s"/editPrefillContract/$contractId")
                     }
 
-                case _ => Future.successful(BadRequest("Error: can't find contract in DB"))
+                case _ => Future.successful(BadRequest(s"Error: can't find contract $contractId in DB"))
             }
         } getOrElse {
             Future.successful(BadRequest("Error: can't get body as json"))
@@ -237,3 +232,5 @@ case class ContractTransactionData(buyPrice: Double,
                                    shortCode: String,
                                    time: Long,
                                    transactionId: Long)
+
+case class BinaryContractData(contractId: String, date: Timestamp)
