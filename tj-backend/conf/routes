@@ -23,3 +23,5 @@ GET     /generalStats               controllers.StatsController.generalStats()
 POST    /submitStrategyFilter       controllers.UserSettingController.submitStrategyFilter(backUrl: String)
 
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+
+GET     /ping                       controllers.ContractController.ping()
