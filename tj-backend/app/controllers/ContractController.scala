@@ -11,7 +11,7 @@ import play.api.mvc._
 import services.ContractService
 import models.{Contract, ContractData, ContractDraftData, ContractDraftRawData}
 import play.api.Environment
-import play.api.libs.json.{JsArray, JsObject}
+import play.api.libs.json.{JsArray, JsObject, Json, OWrites}
 import utils.ExceptionHandler
 import utils.Utils.Math._
 
@@ -223,6 +223,9 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         }
     }
 
+    def ping(): Action[AnyContent] = Action { implicit request =>
+        Ok("{ invalid json }")
+    }
 }
 
 case class ContractTransactionData(buyPrice: Double,
@@ -234,3 +237,9 @@ case class ContractTransactionData(buyPrice: Double,
                                    transactionId: Long)
 
 case class BinaryContractData(contractId: String, date: Timestamp)
+
+case class Ping(message: String, status: String)
+
+object Ping {
+    implicit val pingWrites: OWrites[Ping] = Json.writes[Ping]
+}
