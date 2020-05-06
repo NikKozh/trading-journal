@@ -1,4 +1,5 @@
 import {html, PolymerElement} from '@polymer/polymer/polymer-element.js';
+import Config from '../config';
 
 /**
  * @customElement
@@ -30,7 +31,7 @@ class TjFrontendApp extends PolymerElement {
     connectedCallback() {
         super.connectedCallback();
 
-        fetch("http://localhost:9000/ping")
+        fetch(`${Config.appUrl}/ping`)
             .then(
                 r => r.json(),
                 err => {

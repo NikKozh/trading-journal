@@ -224,7 +224,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     }
 
     def ping(): Action[AnyContent] = Action { implicit request =>
-        Ok("{ invalid json }")
+        Ok(Json.toJson(Ping("PING!", "Up")))
     }
 }
 
