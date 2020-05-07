@@ -1,4 +1,6 @@
 {
+  "entrypoint": "index.html",
+  "shell": "src/tj-frontend-app/tj-frontend-app.js",
   "npm": true,
   "lint": {
     "rules": [
