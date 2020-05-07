@@ -6,5 +6,9 @@
     "rules": [
       "polymer-3"
     ]
-  }
+  },
+  "extraDependencies": [
+    "manifest.json",
+    "node_modules/@webcomponents/webcomponentsjs/**"
+  ]
 }
