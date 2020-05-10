@@ -1,18 +1,24 @@
 {
-  "name": "tj-frontend",
-  "description": "Trading Journal frontend",
-  "dependencies": {
-    "@polymer/polymer": "^3.0.0"
-  },
-  "engines": {
-    "node": ">= 8.10.0",
-    "npm": ">= 6.9.0"
-  },
-  "devDependencies": {
-    "@polymer/test-fixture": "^4.0.2",
-    "@webcomponents/webcomponentsjs": "^2.0.0",
-    "chai": "^4.2.0",
-    "mocha": "^6.1.4",
-    "wct-mocha": "^1.0.1"
-  }
+    "name": "tj-frontend",
+    "description": "Trading Journal frontend",
+    "type": "module",
+    "dependencies": {
+        "@polymer/decorators": "^3.0.0",
+        "@polymer/polymer": "^3.0.0",
+        "@webcomponents/webcomponentsjs": "^2.0.0",
+        "class-transformer": "^0.2.3",
+        "fp-ts": "^2.5.4",
+        "io-ts": "^2.2.2",
+        "reflect-metadata": "^0.1.13"
+    },
+    "engines": {
+        "node": ">= 12.16.3",
+        "npm": ">= 6.14.4"
+    },
+    "devDependencies": {
+        "@polymer/test-fixture": "^4.0.2",
+        "chai": "^4.2.0",
+        "mocha": "^6.1.4",
+        "wct-mocha": "^1.0.1"
+    }
 }
