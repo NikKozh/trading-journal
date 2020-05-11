@@ -3,6 +3,7 @@
     "description": "Trading Journal frontend",
     "type": "module",
     "dependencies": {
+        "@material/mwc-dialog": "^0.15.0",
         "@polymer/decorators": "^3.0.0",
         "@polymer/polymer": "^3.0.0",
         "@webcomponents/webcomponentsjs": "^2.0.0",
