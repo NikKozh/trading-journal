@@ -3,6 +3,7 @@
     "description": "Trading Journal frontend",
     "type": "module",
     "dependencies": {
+        "@material/mwc-button": "^0.15.0",
         "@material/mwc-dialog": "^0.15.0",
         "@polymer/decorators": "^3.0.0",
         "@polymer/polymer": "^3.0.0",
@@ -10,6 +11,7 @@
         "class-transformer": "^0.2.3",
         "fp-ts": "^2.5.4",
         "io-ts": "^2.2.2",
+        "lit-element": "^2.3.1",
         "reflect-metadata": "^0.1.13"
     },
     "engines": {

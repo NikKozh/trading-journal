@@ -4,37 +4,51 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-import { html, PolymerElement } from "@polymer/polymer/polymer-element";
-import { customElement, property } from "@polymer/decorators/lib/decorators";
+/*import {html, PolymerElement} from "@polymer/polymer/polymer-element";
+import {customElement, property} from "@polymer/decorators/lib/decorators";*/
+import { LitElement, html, customElement, property, query } from "lit-element";
 import * as t from "io-ts";
 import * as TE from "fp-ts/es6/TaskEither";
 import * as E from "fp-ts/es6/Either";
-import * as T from "fp-ts/es6/Task";
 import { pipe } from "fp-ts/es6/pipeable";
 import { flow } from "fp-ts/es6/function";
 import Routes from "../../conf/Routes";
 import * as O from "fp-ts/es6/Option";
 import * as A from "fp-ts/es6/Array";
 import "../../utils/arrayExpansion";
+import '@material/mwc-dialog';
+import "@material/mwc-dialog/mwc-dialog";
+import "../error-alert/error-alert";
 const Message = t.type({
     ["message"]: t.string,
     ["status"]: t.string,
     ["code"]: t.number
 }, "Message");
-let TjFrontendApp = class TjFrontendApp extends PolymerElement {
+let TjFrontendApp = class TjFrontendApp extends LitElement {
     constructor() {
-        super(...arguments);
+        super();
         this.signal = { message: "No message provided yet", status: "N/A", code: 0 };
+        this.errorCaption = "";
+        this.errorText = "";
+        this.showError = false;
+        console.log("****************** connectedCallback BEGIN");
+        const outerContext = this;
+        pipe(Routes.pingMessage, this.fetchMessage, this.getJsonObject, this.extractMessage)().then(msgE => this.resolveMessage(msgE, outerContext));
     }
-    static get template() {
+    render() {
         return html `
             <style>
                 :host {
                     display: block;
                 }
             </style>
-            <h2>Message: [[signal.message]]</h2>
-            <h2>Status: [[signal.status]]</h2>
+            <error-alert id="${"error-alert-wrapper"}"
+                         .caption="${this.errorCaption}"
+                         .text="${this.errorText}"
+                         .open="${this.showError}"
+            ></error-alert>
+            <h2>Message: ${this.signal.message}</h2>
+            <h2>Status: ${this.signal.status}</h2>
         `;
     }
     // TODO: улучшить обработку ошибок - вместо flow(String, Error) сделать что-нибудь поумнее
@@ -132,24 +146,43 @@ let TjFrontendApp = class TjFrontendApp extends PolymerElement {
         return TE.chain(mapMessage)(jsonObjectTE);
     }
     // TODO: вместо резолва в конечную модель научиться выводить модалки с ошибкой
-    resolveMessage(messageTE) {
-        return TE.getOrElse((error) => {
-            console.log("STEP: RESOLVING");
-            return T.of({ message: error.message, status: "Down", code: -1 });
-        })(messageTE);
+    /*    private resolveMessage(messageTE: TaskEither<Error, Message>): Task<Message> {
+            return TE.getOrElse<Error, Message>((error: Error) => {
+                console.log("STEP: RESOLVING");
+    
+                return T.of({message: error.message, status: "Down", code: -1})
+            })(messageTE)
+        }*/
+    updated(_changedProperties) {
+        super.updated(_changedProperties);
+        console.log('updated main: ', _changedProperties);
     }
-    assignMessage(message) {
-        this.signal = message;
-    }
-    connectedCallback() {
-        super.connectedCallback();
-        console.log("****************** connectedCallback BEGIN");
-        pipe(Routes.pingMessage, this.fetchMessage, this.getJsonObject, this.extractMessage, this.resolveMessage)().then(msg => this.assignMessage(msg));
+    // TODO: дело происходит в промисе, поэтому требуется _this. Наверняка это можно сделать как-то получше
+    resolveMessage(messageE, _this) {
+        console.log("STEP: RESOLVING, _this: ", _this);
+        E.fold((error) => {
+            _this.errorCaption = "Заголовок ошибки";
+            _this.errorText = error.message;
+            _this.showError = true;
+            _this.signal = { message: "error", status: "down", code: -1 };
+        }, (message) => this.signal = message)(messageE);
     }
 };
 __decorate([
-    property({ type: Object })
+    property()
 ], TjFrontendApp.prototype, "signal", void 0);
+__decorate([
+    property()
+], TjFrontendApp.prototype, "errorCaption", void 0);
+__decorate([
+    property()
+], TjFrontendApp.prototype, "errorText", void 0);
+__decorate([
+    property()
+], TjFrontendApp.prototype, "showError", void 0);
+__decorate([
+    query("#error-alert-wrapper")
+], TjFrontendApp.prototype, "errorAlert", void 0);
 TjFrontendApp = __decorate([
     customElement("tj-frontend-app")
 ], TjFrontendApp);
