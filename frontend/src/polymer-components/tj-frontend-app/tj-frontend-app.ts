@@ -1,5 +1,3 @@
-/*import {html, PolymerElement} from "@polymer/polymer/polymer-element";
-import {customElement, property} from "@polymer/decorators/lib/decorators";*/
 import {LitElement, html, customElement, property, TemplateResult, query, PropertyValues} from "lit-element";
 import * as t from "io-ts";
 import * as TE from "fp-ts/es6/TaskEither";
@@ -16,11 +14,8 @@ import * as A from "fp-ts/es6/Array"
 import * as io from "fp-ts/es6/IO"
 import {IO} from "fp-ts/es6/IO"
 import "../../utils/arrayExpansion"
-import '@material/mwc-dialog';
-import "@material/mwc-dialog/mwc-dialog";
-import {Dialog} from "@material/mwc-dialog/mwc-dialog";
-import ErrorAlert from "../error-alert/error-alert";
-import "../error-alert/error-alert";
+import "mwc-app-dialog"
+import {MwcAppDialog} from "mwc-app-dialog/MwcAppDialog";
 
 const Message = t.type({
     ["message" as string]: t.string,
@@ -44,8 +39,8 @@ class TjFrontendApp extends LitElement {
     @property()
     showError: boolean = false
 
-    @query("#error-alert-wrapper")
-    errorAlert!: ErrorAlert;
+    @query("#error-alert")
+    errorAlert!: MwcAppDialog;
 
     constructor() {
         super();
@@ -69,12 +64,11 @@ class TjFrontendApp extends LitElement {
                 :host {
                     display: block;
                 }
+                #error-alert {
+                    --mdc-theme-surface: #ffe0e0
+                }
             </style>
-            <error-alert id="${"error-alert-wrapper"}"
-                         .caption="${this.errorCaption}"
-                         .text="${this.errorText}"
-                         .open="${this.showError}"
-            ></error-alert>
+            <mwc-app-dialog id="error-alert"></mwc-app-dialog> 
             <h2>Message: ${this.signal.message}</h2>
             <h2>Status: ${this.signal.status}</h2>
         `
@@ -217,29 +211,13 @@ class TjFrontendApp extends LitElement {
         return TE.chain(mapMessage)(jsonObjectTE)
     }
 
-    // TODO: вместо резолва в конечную модель научиться выводить модалки с ошибкой
-/*    private resolveMessage(messageTE: TaskEither<Error, Message>): Task<Message> {
-        return TE.getOrElse<Error, Message>((error: Error) => {
-            console.log("STEP: RESOLVING");
-
-            return T.of({message: error.message, status: "Down", code: -1})
-        })(messageTE)
-    }*/
-
-    updated(_changedProperties: PropertyValues): void {
-        super.updated(_changedProperties);
-        console.log('updated main: ', _changedProperties);
-    }
-
     // TODO: дело происходит в промисе, поэтому требуется _this. Наверняка это можно сделать как-то получше
     private resolveMessage(messageE: Either<Error, Message>, _this: TjFrontendApp): void {
         console.log("STEP: RESOLVING, _this: ", _this);
 
         E.fold(
             (error: Error) => {
-                _this.errorCaption = "Заголовок ошибки";
-                _this.errorText = error.message;
-                _this.showError = true;
+                this.errorAlert.notice("Заголовок ошибки", error.message);
 
                 _this.signal = {message: "error", status: "down", code: -1};
             },
