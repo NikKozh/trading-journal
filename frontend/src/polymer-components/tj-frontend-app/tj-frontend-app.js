@@ -4,8 +4,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-/*import {html, PolymerElement} from "@polymer/polymer/polymer-element";
-import {customElement, property} from "@polymer/decorators/lib/decorators";*/
 import { LitElement, html, customElement, property, query } from "lit-element";
 import * as t from "io-ts";
 import * as TE from "fp-ts/es6/TaskEither";
@@ -16,9 +14,7 @@ import Routes from "../../conf/Routes";
 import * as O from "fp-ts/es6/Option";
 import * as A from "fp-ts/es6/Array";
 import "../../utils/arrayExpansion";
-import '@material/mwc-dialog';
-import "@material/mwc-dialog/mwc-dialog";
-import "../error-alert/error-alert";
+import "mwc-app-dialog";
 const Message = t.type({
     ["message"]: t.string,
     ["status"]: t.string,
@@ -41,12 +37,11 @@ let TjFrontendApp = class TjFrontendApp extends LitElement {
                 :host {
                     display: block;
                 }
+                #error-alert {
+                    --mdc-theme-surface: #ffe0e0
+                }
             </style>
-            <error-alert id="${"error-alert-wrapper"}"
-                         .caption="${this.errorCaption}"
-                         .text="${this.errorText}"
-                         .open="${this.showError}"
-            ></error-alert>
+            <mwc-app-dialog id="error-alert"></mwc-app-dialog> 
             <h2>Message: ${this.signal.message}</h2>
             <h2>Status: ${this.signal.status}</h2>
         `;
@@ -145,25 +140,11 @@ let TjFrontendApp = class TjFrontendApp extends LitElement {
         }
         return TE.chain(mapMessage)(jsonObjectTE);
     }
-    // TODO: вместо резолва в конечную модель научиться выводить модалки с ошибкой
-    /*    private resolveMessage(messageTE: TaskEither<Error, Message>): Task<Message> {
-            return TE.getOrElse<Error, Message>((error: Error) => {
-                console.log("STEP: RESOLVING");
-    
-                return T.of({message: error.message, status: "Down", code: -1})
-            })(messageTE)
-        }*/
-    updated(_changedProperties) {
-        super.updated(_changedProperties);
-        console.log('updated main: ', _changedProperties);
-    }
     // TODO: дело происходит в промисе, поэтому требуется _this. Наверняка это можно сделать как-то получше
     resolveMessage(messageE, _this) {
         console.log("STEP: RESOLVING, _this: ", _this);
         E.fold((error) => {
-            _this.errorCaption = "Заголовок ошибки";
-            _this.errorText = error.message;
-            _this.showError = true;
+            this.errorAlert.notice("Заголовок ошибки", error.message);
             _this.signal = { message: "error", status: "down", code: -1 };
         }, (message) => this.signal = message)(messageE);
     }
@@ -181,7 +162,7 @@ __decorate([
     property()
 ], TjFrontendApp.prototype, "showError", void 0);
 __decorate([
-    query("#error-alert-wrapper")
+    query("#error-alert")
 ], TjFrontendApp.prototype, "errorAlert", void 0);
 TjFrontendApp = __decorate([
     customElement("tj-frontend-app")
