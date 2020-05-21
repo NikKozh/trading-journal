@@ -1,7 +1,0 @@
-{
-  "name": "tj-frontend",
-  "short_name": "tj-frontend",
-  "description": "Trading Journal frontend",
-  "start_url": "/",
-  "display": "standalone"
-}
