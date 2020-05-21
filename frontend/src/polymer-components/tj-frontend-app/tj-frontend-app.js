@@ -4,38 +4,49 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-import { LitElement, html, customElement, property, query } from "lit-element";
-import * as t from "io-ts";
-import * as TE from "fp-ts/es6/TaskEither";
-import * as E from "fp-ts/es6/Either";
-import { pipe } from "fp-ts/es6/pipeable";
-import { flow } from "fp-ts/es6/function";
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+import { LitElement, html, customElement, property as litProperty, query } from "lit-element";
 import Routes from "../../conf/Routes";
-import * as O from "fp-ts/es6/Option";
-import * as A from "fp-ts/es6/Array";
 import "../../utils/arrayExpansion";
 import "mwc-app-dialog";
-const Message = t.type({
-    ["message"]: t.string,
-    ["status"]: t.string,
-    ["code"]: t.number
-}, "Message");
+import { MwcAppDialog } from "mwc-app-dialog/MwcAppDialog";
+import { Property as CodecProperty } from "@orchestrator/gen-io-ts";
+import { fetchAndResolve } from "../../utils/apiJsonResolver";
+class Message {
+    constructor(message, status, code) {
+        this.message = message;
+        this.status = status;
+        this.code = code;
+    }
+}
+__decorate([
+    CodecProperty({ isRequired: true }),
+    __metadata("design:type", String)
+], Message.prototype, "message", void 0);
+__decorate([
+    CodecProperty({ isRequired: true }),
+    __metadata("design:type", String)
+], Message.prototype, "status", void 0);
+__decorate([
+    CodecProperty({ isRequired: true }),
+    __metadata("design:type", Number)
+], Message.prototype, "code", void 0);
 let TjFrontendApp = class TjFrontendApp extends LitElement {
     constructor() {
         super();
-        this.signal = { message: "No message provided yet", status: "N/A", code: 0 };
-        this.errorCaption = "";
-        this.errorText = "";
-        this.showError = false;
-        console.log("****************** connectedCallback BEGIN");
-        const outerContext = this;
-        pipe(Routes.pingMessage, this.fetchMessage, this.getJsonObject, this.extractMessage)().then(msgE => this.resolveMessage(msgE, outerContext));
+        this.signal = new Message("No message provided yet", "N/A", 0);
+        fetchAndResolve(Routes.pingMessage, Message, (message) => this.signal = message, (error) => {
+            this.errorAlert.notice("Заголовок ошибки", error.message);
+            this.signal = new Message("error", "down", -1);
+        });
     }
     render() {
         return html `
             <style>
                 :host {
-                    display: block;
+                    display: block
                 }
                 #error-alert {
                     --mdc-theme-surface: #ffe0e0
@@ -44,126 +55,19 @@ let TjFrontendApp = class TjFrontendApp extends LitElement {
             <mwc-app-dialog id="error-alert"></mwc-app-dialog> 
             <h2>Message: ${this.signal.message}</h2>
             <h2>Status: ${this.signal.status}</h2>
+            <h2>Code: ${this.signal.code}</h2>
         `;
-    }
-    // TODO: улучшить обработку ошибок - вместо flow(String, Error) сделать что-нибудь поумнее
-    fetchMessage(url) {
-        return TE.tryCatch(() => {
-            console.log("STEP: START FETCHING...");
-            return fetch(url);
-        }, flow(String, Error));
-    }
-    // TODO: улучшить обработку ошибок - вместо flow(String, Error) сделать что-нибудь поумнее
-    getJsonObject(responseTE) {
-        return TE.chain((response) => {
-            return TE.tryCatch(() => {
-                console.log("STEP: GETTING JSON...");
-                /*return response.ok ?
-                    response.json() :
-                    Promise.reject(
-                        `SERVER PROBLEM. Response status:
-                        ${response.status} ${response.statusText} for URL ${response.url}`
-                    )*/
-                return Promise.resolve({ code: 123, status: "23", message: 123, anotherField: "123" });
-            }, flow(String, Error));
-        })(responseTE);
-    }
-    extractMessage(jsonObjectTE) {
-        /* Сначала проверяем, что нет лишних полей
-         * <br>
-         * TODO: посмотреть свежим взглядом, мб можно ещё что-нибудь сократить\оптимизировать\переписать
-         *  + вынести все функции, которые могут быть полезные где-то ещё
-         *  +
-         * */
-        function checkFieldSetsEquality(jsonObject) {
-            const jsonObjectFields = Object.getOwnPropertyNames(jsonObject);
-            const messageFields = Object.getOwnPropertyNames(Message.props);
-            function resolveFailedFields() {
-                function getJsonType(value) {
-                    return String(typeof jsonObject[value]);
-                }
-                function getMessageType(value) {
-                    return Message.props[value].name;
-                }
-                function formatErrorFields(errorFields, getType) {
-                    return errorFields.map(value => {
-                        return `${value}: ${getType(value)}`;
-                    }).join(", ");
-                }
-                const jsonExcessFields = jsonObjectFields.diff(messageFields);
-                const messageMissingFields = messageFields.diff(jsonObjectFields);
-                const formattedJsonExcessFields = formatErrorFields(jsonExcessFields, getJsonType);
-                const formattedMessageMissingFields = formatErrorFields(messageMissingFields, getMessageType);
-                const jsonExcessFieldsMessage = jsonExcessFields.length > 0 ?
-                    O.some(`JSON excess fields: {${formattedJsonExcessFields}}`) :
-                    O.none;
-                const messageMissingFieldsMessage = messageMissingFields.length > 0 ?
-                    O.some(`Model missing fields: {${formattedMessageMissingFields}}`) :
-                    O.none;
-                return new Error(`
-                    fields are not match. Details: 
-                    ${A.compact([jsonExcessFieldsMessage, messageMissingFieldsMessage]).join("; ")}
-                `);
-            }
-            function isFieldSetsEqual() {
-                function isFieldsCountEqual() {
-                    return jsonObjectFields.length === messageFields.length;
-                }
-                function isFieldsNamesEqual() {
-                    return pipe(A.zip(jsonObjectFields.sort(), messageFields.sort()), A.findFirst(([jsonField, messageField]) => jsonField !== messageField), O.isNone);
-                }
-                return isFieldsCountEqual() && isFieldsNamesEqual();
-            }
-            return isFieldSetsEqual() ?
-                E.right(jsonObject) :
-                E.left(resolveFailedFields());
-        }
-        function formatMapErrors(errors) {
-            function getContextPath(context) {
-                return `${Message.name}.${context[1].key} (${context[1].type.name})`;
-            }
-            function getMessage(error) {
-                return `Invalid value ${JSON.stringify(error.value)} (${typeof error.value})
-                        supplied to ${getContextPath(error.context)}`;
-            }
-            return errors.map(getMessage);
-        }
-        function mapMessage(jsonObject) {
-            function simplifyValidationErrors(tErrors) {
-                const formattedErrors = formatMapErrors(tErrors).join("; ");
-                const errorsMessage = `types are not compatible. Details: ${formattedErrors}`;
-                console.log("MAP ERROR: ", errorsMessage);
-                return new Error(errorsMessage);
-            }
-            console.log("STEP: START MAPPING...");
-            return pipe(jsonObject, checkFieldSetsEquality, E.chain(objectWithCheckedFieldSets => E.mapLeft(simplifyValidationErrors)(Message.decode(objectWithCheckedFieldSets))), E.mapLeft(errors => new Error(`MODEL MAPPING PROBLEM. ${errors}`)), TE.fromEither);
-        }
-        return TE.chain(mapMessage)(jsonObjectTE);
-    }
-    // TODO: дело происходит в промисе, поэтому требуется _this. Наверняка это можно сделать как-то получше
-    resolveMessage(messageE, _this) {
-        console.log("STEP: RESOLVING, _this: ", _this);
-        E.fold((error) => {
-            this.errorAlert.notice("Заголовок ошибки", error.message);
-            _this.signal = { message: "error", status: "down", code: -1 };
-        }, (message) => this.signal = message)(messageE);
     }
 };
 __decorate([
-    property()
+    litProperty(),
+    __metadata("design:type", Message)
 ], TjFrontendApp.prototype, "signal", void 0);
 __decorate([
-    property()
-], TjFrontendApp.prototype, "errorCaption", void 0);
-__decorate([
-    property()
-], TjFrontendApp.prototype, "errorText", void 0);
-__decorate([
-    property()
-], TjFrontendApp.prototype, "showError", void 0);
-__decorate([
-    query("#error-alert")
+    query("#error-alert"),
+    __metadata("design:type", MwcAppDialog)
 ], TjFrontendApp.prototype, "errorAlert", void 0);
 TjFrontendApp = __decorate([
-    customElement("tj-frontend-app")
+    customElement("tj-frontend-app"),
+    __metadata("design:paramtypes", [])
 ], TjFrontendApp);

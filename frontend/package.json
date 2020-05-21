@@ -3,14 +3,15 @@
     "description": "Trading Journal frontend",
     "type": "module",
     "dependencies": {
-        "lit-element": "^2.3.1",
+        "@material/mwc-button": "^0.15.0",
+        "@orchestrator/gen-io-ts": "^3.0.1",
         "@webcomponents/webcomponentsjs": "^2.0.0",
         "class-transformer": "^0.2.3",
-        "reflect-metadata": "^0.1.13",
         "fp-ts": "^2.5.4",
         "io-ts": "^2.2.2",
+        "lit-element": "^2.3.1",
         "mwc-app-dialog": "^0.1.9",
-        "@material/mwc-button": "^0.15.0"
+        "reflect-metadata": "^0.1.13"
     },
     "engines": {
         "node": ">= 12.16.3",
@@ -20,6 +21,11 @@
         "@polymer/test-fixture": "^4.0.2",
         "chai": "^4.2.0",
         "mocha": "^6.1.4",
+        "parcel-bundler": "^1.12.4",
         "wct-mocha": "^1.0.1"
+    },
+    "scripts": {
+        "dev": "parcel index.html",
+        "build": "parcel build index.html"
     }
 }

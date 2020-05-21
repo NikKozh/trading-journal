@@ -3,7 +3,8 @@
         "experimentalDecorators": true,
         "strict": true,
         "target": "ES2019",
-        "moduleResolution": "Node"
+        "moduleResolution": "Node",
+        "emitDecoratorMetadata": true
     },
     "include": [
         "src/**/*",
