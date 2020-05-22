@@ -10,6 +10,7 @@ import * as E from "fp-ts/es6/Either"
 import * as t from "io-ts"
 import {Type} from "@orchestrator/gen-io-ts/lib/types"
 import {genIoType} from "@orchestrator/gen-io-ts"
+import {eqString} from "fp-ts/es6/Eq";
 
 // TODO: переделать все Error на свою кастомную модель
 
@@ -62,8 +63,8 @@ export function extractModel<T>(ModelType: Type<T>) {
                     }).join(", ")
                 }
 
-                const jsonExcessFields = jsonObjectFields.diff(modelFields) as Array<keyof J>
-                const modelMissingFields = modelFields.diff(jsonObjectFields) as Array<keyof T>
+                const jsonExcessFields = A.difference(eqString)(jsonObjectFields, modelFields) as Array<keyof J>
+                const modelMissingFields = A.difference(eqString)(modelFields, jsonObjectFields) as Array<keyof T>
 
                 const formattedJsonExcessFields = formatErrorFields(jsonObject, jsonExcessFields)
                 const formattedModelMissingFields = formatErrorFields(modelFakeObject, modelMissingFields)

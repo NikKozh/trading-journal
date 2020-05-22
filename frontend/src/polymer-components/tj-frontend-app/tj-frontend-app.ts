@@ -1,6 +1,5 @@
 import {LitElement, html, customElement, property as litProperty, TemplateResult, query} from "lit-element"
 import Routes from "../../conf/Routes"
-import "../../utils/arrayExpansion"
 import "mwc-app-dialog"
 import {MwcAppDialog} from "mwc-app-dialog/MwcAppDialog"
 import {Property as CodecProperty} from "@orchestrator/gen-io-ts"
