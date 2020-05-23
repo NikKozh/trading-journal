@@ -8,39 +8,26 @@ import * as E from "fp-ts/es6/Either";
 import {DetailedError} from "../../models/DetailedError";
 import {ErrorAlert} from "../error-alert/error-alert"
 import {Message} from "../../models/Message";
+import {fetchAndResolve} from "../../utils/apiJsonResolver";
+import Routes from "../../conf/Routes";
 
 @customElement("app-shell")
 class AppShell extends LitElement {
     @litProperty()
-    signal: Message = new Message("No message provided yet", "N/A", 0)
+    signal: Message = new Message("Loading...", "N/A", 0)
 
     @query("#error-alert")
     errorAlert!: ErrorAlert
 
     protected firstUpdated() {
-        /*        fetchAndResolve(
+        fetchAndResolve(
             Routes.pingMessage,
             Message,
             (message: Message) => this.signal = message,
-            (error: Error) => {
-                this.errorAlert.notice("Заголовок ошибки", error.message)
+            (error: DetailedError) => {
+                this.errorAlert.open(error)
                 this.signal = new Message("error", "down", -1)
             }
-        )*/
-
-        const obj = { caption: "123", cause: "Cause", details: 123 }
-        const objTE = TE.fromEither(E.right(obj))
-
-        pipe(objTE,
-            resolver.extractModel(DetailedError),
-            resolver.resolveModel(
-                errorModel => console.log("Success error model: ", errorModel),
-                error => {
-                    console.log("THIS errorAlert: ", this.errorAlert)
-                    const detailedError = new DetailedError("Заголовок ошибки", error.message, "Детали")
-                    this.errorAlert.open(detailedError)
-                }
-            )
         )
     }
 
