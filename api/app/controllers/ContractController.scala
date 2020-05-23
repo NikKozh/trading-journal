@@ -5,7 +5,7 @@ import java.time.{Instant, LocalDateTime, Month, ZoneId, ZoneOffset}
 import java.util.UUID
 
 import helpers.ContractHelper._
-import helpers.{BinaryHelper, ContractHelper, ScreenshotHelper}
+import helpers.{BinaryHelper, ContractHelper, OptionNullJsonWriter, ScreenshotHelper}
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
@@ -224,7 +224,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     }
 
     def ping(): Action[AnyContent] = Action { implicit request =>
-        Ok(Json.toJson(Ping("PING!", "Up")))
+        BadRequest(Json.toJson(ApiError("DATABASE PROBLEM", "Id xxx not found")))
     }
 }
 
@@ -238,8 +238,15 @@ case class ContractTransactionData(buyPrice: Double,
 
 case class BinaryContractData(contractId: String, date: Timestamp)
 
-case class Ping(message: String, status: String)
+
+case class Ping(message: String, status: String, code: Int)
 
 object Ping {
     implicit val pingWrites: OWrites[Ping] = Json.writes[Ping]
+}
+
+case class ApiError(caption: String, cause: String, details: Option[String] = None)
+
+object ApiError extends OptionNullJsonWriter {
+    implicit val apiErrorWrites: OWrites[ApiError] = Json.writes[ApiError]
 }
