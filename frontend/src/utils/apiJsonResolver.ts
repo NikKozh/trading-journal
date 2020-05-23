@@ -11,6 +11,7 @@ import * as t from "io-ts"
 import {Type} from "@orchestrator/gen-io-ts/lib/types"
 import {genIoType} from "@orchestrator/gen-io-ts"
 import {eqString} from "fp-ts/es6/Eq";
+import {ordString} from "fp-ts/es6/Ord";
 
 // TODO: переделать все Error на свою кастомную модель
 
@@ -31,15 +32,13 @@ export function getJsonObject(responseTE: TaskEither<Error, Response>): TaskEith
         return TE.tryCatch(
             () => {
                 console.log("STEP: GETTING JSON...")
-                // TODO: не забыть раскомментить это обратно
-                /*return response.ok ?
+                return response.ok ?
                     response.json() :
                     // TODO: в случае BadRequest тоже ловить Json, только свою кастомную модель ошибки
                     Promise.reject(
                         `SERVER PROBLEM. Response status:
                         ${response.status} ${response.statusText} for URL ${response.url}`
-                    )*/
-                return Promise.resolve({message: "OK", status: "UP", code: 123})
+                    )
             },
             flow(String, Error)
         )
@@ -58,8 +57,12 @@ export function extractModel<T>(ModelType: Type<T>) {
             function resolveFailedFields(): Error {
                 function formatErrorFields<U>(object: U, errorFields: Array<keyof U>): string {
                     return errorFields.map(field => {
-                        const fieldType = String(typeof object[field])
-                        return `${field}: ${fieldType}`
+                        // console.log("TYPE: ", ModelCodec.props[field].name)
+                        // TODO: подумать над случаями, когда в модели сложный тип (например, Option<Number>)
+                        //  в таких случаях fieldType === object, а значит теряется весь смысл этого вывода
+                        //  (вот на стадии маппинга мы в целом умеем доставать тип через контекст типа t.Errors)
+                        const fieldType = typeof object[field]
+                        return `${field}: ${String(fieldType)}`
                     }).join(", ")
                 }
 
@@ -76,7 +79,7 @@ export function extractModel<T>(ModelType: Type<T>) {
 
                 const messageMissingFieldsMessage =
                     modelMissingFields.length > 0 ?
-                        O.some(`Model missing fields: {${formattedModelMissingFields}}`) :
+                        O.some(`Model missing fields: ${ModelCodec.name} { ${formattedModelMissingFields} }`) :
                         O.none
 
                 return new Error(`
@@ -86,25 +89,39 @@ export function extractModel<T>(ModelType: Type<T>) {
             }
 
             function isFieldSetsEqual(): boolean {
-                function isFieldsCountEqual(): boolean {
+                function isCountEqual(): boolean {
                     return jsonObjectFields.length === modelFields.length
                 }
 
-                function isFieldsNamesEqual(): boolean {
+                function isNamesEqual(): boolean {
                     return pipe(
-                        A.zip(jsonObjectFields.sort(), modelFields.sort()),
+                        A.zip(A.sort(ordString)(jsonObjectFields), A.sort(ordString)(modelFields)),
                         A.findFirst(([jsonField, messageField]) => jsonField !== messageField),
                         O.isNone
                     )
                 }
 
-                return isFieldsCountEqual() && isFieldsNamesEqual()
+                return isCountEqual() && isNamesEqual()
             }
 
-            // TODO: добавить ещё одну финальную проверку на то, что поля в JSON идут в том же порядке (важно для маппинга)
+            function checkFieldsOrder(): Either<Error, Object> {
+                // TODO: forall в библиотеке fp-ts? (написать свою функцию-утилиту?)
+                const isOrderRight =
+                    pipe(A.zip(jsonObjectFields, modelFields),
+                        A.dropLeftWhile(zipped => {
+                            const [jsonField, modelField] = zipped
+                            return jsonField === modelField
+                        }),
+                        A.isEmpty
+                    )
+
+                return isOrderRight ?
+                    E.right(jsonObject) :
+                    E.left(Error("fields are match, but order is wrong."))
+            }
 
             return isFieldSetsEqual() ?
-                E.right(jsonObject) :
+                checkFieldsOrder() :
                 E.left(resolveFailedFields())
         }
 
@@ -118,10 +135,7 @@ export function extractModel<T>(ModelType: Type<T>) {
                         supplied to ${getContextPath(error.context)}`
             }
 
-            // TODO: в некоторых случаях в errors оказывается несколько абсолютно одинаковых ошибок
-            //  (скорее всего тогда, когда декодер не узнаёт тип) - надо научиться распознавать такую ситуацию
-            //  (например, глубоким сравнением контекста) и отсекать лишнее
-            return errors.map(getMessage)
+            return A.uniq(eqString)(errors.map(getMessage))
         }
 
         function mapModel(jsonObject: Object): TaskEither<Error, T> {

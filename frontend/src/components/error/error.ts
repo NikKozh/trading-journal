@@ -1,8 +1,8 @@
 import {Option} from "fp-ts/es6/Option"
 import * as O from "fp-ts/es6/Option"
-import {Property as CodecProperty} from "@orchestrator/gen-io-ts/lib/property";
+import {Property as CodecProperty} from "@orchestrator/gen-io-ts"
 
-class CustomError {
+export class CustomError {
     @CodecProperty({ isRequired: true })
     caption: string
 
