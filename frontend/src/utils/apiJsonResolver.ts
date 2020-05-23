@@ -1,6 +1,7 @@
 import {TaskEither} from "fp-ts/es6/TaskEither"
 import * as TE from "fp-ts/es6/TaskEither"
-import * as Task from "fp-ts/es6/Task"
+import * as T from "fp-ts/es6/Task"
+import {Task} from "fp-ts/es6/Task"
 import {flow} from "fp-ts/es6/function"
 import {Either} from "fp-ts/es6/Either"
 import * as O from "fp-ts/es6/Option"
@@ -10,51 +11,110 @@ import * as E from "fp-ts/es6/Either"
 import * as t from "io-ts"
 import {Type} from "@orchestrator/gen-io-ts/lib/types"
 import {genIoType} from "@orchestrator/gen-io-ts"
-import {eqString} from "fp-ts/es6/Eq";
-import {ordString} from "fp-ts/es6/Ord";
+import {eqString} from "fp-ts/es6/Eq"
+import {ordString} from "fp-ts/es6/Ord"
+import {DetailedError} from "../models/DetailedError"
 
-// TODO: переделать все Error на свою кастомную модель
+// TODO: Подумать про вывод тела ответа запроса - насколько нужно и как сделать
+//  (там сейчас проблема, что тело достаётся через промис, который заблокирован другим потоком)
 
-// TODO: улучшить обработку ошибок - вместо flow(String, Error) сделать что-нибудь поумнее
-export function getResponse(url: string): TaskEither<Error, Response> {
+export function getResponse(url: string): TaskEither<DetailedError, Response> {
     return TE.tryCatch(
         () => {
             console.log("STEP: START FETCHING...")
             return fetch(url)
         },
-        flow(String, Error)
+        flow(
+            String,
+            errorStr => new DetailedError(
+                 "FETCH ERROR",
+                 errorStr,
+                 `Проблема с доступом к ресурсу по URL: ${url}`
+             )
+        )
     )
 }
 
-// TODO: улучшить обработку ошибок - вместо flow(String, Error) сделать что-нибудь поумнее
-export function getJsonObject(responseTE: TaskEither<Error, Response>): TaskEither<Error, Object> {
+export function getJsonObject(responseTE: TaskEither<DetailedError, Response>): TaskEither<DetailedError, Object> {
     return TE.chain((response: Response) => {
-        return TE.tryCatch(
-            () => {
-                console.log("STEP: GETTING JSON...")
-                return response.ok ?
-                    response.json() :
-                    // TODO: в случае BadRequest тоже ловить Json, только свою кастомную модель ошибки
-                    Promise.reject(
-                        `SERVER PROBLEM. Response status:
-                        ${response.status} ${response.statusText} for URL ${response.url}`
+        const responseJsonPromise: Promise<Object> = response.json()
+
+        function resolveModelJson(): TaskEither<DetailedError, Object> {
+            return TE.tryCatch(
+                () => responseJsonPromise,
+                flow(
+                    String,
+                    errStr => {
+                        console.log("Response body: ", response.body)
+                        return new DetailedError(
+                            "JSON ERROR",
+                            errStr,
+                            `Сервер ответил "200 OK" при обращении к ${response.url},
+                             но не удалось получить или распарсить JSON. Тело ответа см. в консоли.`
+                        )
+                    }
+                )
+            )
+        }
+
+        function resolveErrorModelJson(): Task<DetailedError> {
+            const errorJsonObjectTE = 
+                TE.tryCatch(
+                    () => responseJsonPromise,
+                    flow(
+                        String,
+                        errorStr => {
+                            console.log("Response body: ", response.body)
+                            return new DetailedError(
+                                "SERVER PROBLEM",
+                                errorStr,
+                                `Сервер ответил "400 BadRequest" при обращении к ${response.url}, но получить или
+                                 распарсить JSON с моделью ошибки не удалось. Тело ответа см. в консоли.`
+                            )
+                        }
                     )
-            },
-            flow(String, Error)
-        )
+                )
+
+            const extractionOrServerError = extractModel(DetailedError)(errorJsonObjectTE)
+
+            // TODO: где-то здесь добавить приписку в начале к details, что сервер отдал некорректную модель ошибки
+            return TE.getOrElse(T.of)(extractionOrServerError)
+        }
+
+        function otherServerResponseError(): DetailedError {
+            console.log("Response body: ", response)
+            return new DetailedError(
+                "RESPONSE ERROR",
+                `Response status "${response.status} ${response.statusText}" for URL ${response.url}`,
+                `Некорректный ответ от сервера. Тело ответа см. в консоли.`
+            )
+        }
+
+        switch (response.status) {
+            case 200: // OK
+                return resolveModelJson()
+
+            case 400: // BadRequest
+                return TE.leftTask(resolveErrorModelJson())
+
+            // TODO: добавить отдельную обработку для 404 (т.к. частый кейс)
+
+            default: // Other
+                return TE.left(otherServerResponseError())
+        }
     })(responseTE)
 }
 
-export function extractModel<T>(ModelType: Type<T>) {
-    return function (jsonObjectTE: TaskEither<Error, Object>): TaskEither<Error, T> {
+export function extractModel<M>(ModelType: Type<M>) {
+    return function (jsonObjectTE: TaskEither<DetailedError, Object>): TaskEither<DetailedError, M> {
         const ModelCodec = genIoType(ModelType)
         const modelFakeObject = new ModelType() // небольшой хак, чтобы достать из модели список полей и их типы
 
-        function checkFieldSetsEquality<J extends object>(jsonObject: J): Either<Error, Object> {
+        function checkFieldSetsEquality<J extends object>(jsonObject: J): Either<DetailedError, Object> {
             const jsonObjectFields = Object.getOwnPropertyNames(jsonObject)
             const modelFields = Object.getOwnPropertyNames(modelFakeObject)
 
-            function resolveFailedFields(): Error {
+            function resolveFailedFields(): DetailedError {
                 function formatErrorFields<U>(object: U, errorFields: Array<keyof U>): string {
                     return errorFields.map(field => {
                         // console.log("TYPE: ", ModelCodec.props[field].name)
@@ -67,7 +127,7 @@ export function extractModel<T>(ModelType: Type<T>) {
                 }
 
                 const jsonExcessFields = A.difference(eqString)(jsonObjectFields, modelFields) as Array<keyof J>
-                const modelMissingFields = A.difference(eqString)(modelFields, jsonObjectFields) as Array<keyof T>
+                const modelMissingFields = A.difference(eqString)(modelFields, jsonObjectFields) as Array<keyof M>
 
                 const formattedJsonExcessFields = formatErrorFields(jsonObject, jsonExcessFields)
                 const formattedModelMissingFields = formatErrorFields(modelFakeObject, modelMissingFields)
@@ -82,10 +142,13 @@ export function extractModel<T>(ModelType: Type<T>) {
                         O.some(`Model missing fields: ${ModelCodec.name} { ${formattedModelMissingFields} }`) :
                         O.none
 
-                return new Error(`
-                    fields are not match. Details: 
-                    ${A.compact([jsonExcessFieldsMessage, messageMissingFieldsMessage]).join(" ")}
-                `)
+                // TODO: вот здесь получается вынуждены проставлять пустой caption, т.к. он ещё неизвестен.
+                //  Некрасиво. Надо поправить (сделать его опциональным в модели или ещё как-то)
+                return new DetailedError(
+                    "",
+                    "Fields are not match.",
+                    A.compact([jsonExcessFieldsMessage, messageMissingFieldsMessage]).join(" ")
+                )
             }
 
             function isFieldSetsEqual(): boolean {
@@ -104,7 +167,7 @@ export function extractModel<T>(ModelType: Type<T>) {
                 return isCountEqual() && isNamesEqual()
             }
 
-            function checkFieldsOrder(): Either<Error, Object> {
+            function checkFieldsOrder(): Either<DetailedError, Object> {
                 // TODO: forall в библиотеке fp-ts? (написать свою функцию-утилиту?)
                 const isOrderRight =
                     pipe(A.zip(jsonObjectFields, modelFields),
@@ -117,7 +180,8 @@ export function extractModel<T>(ModelType: Type<T>) {
 
                 return isOrderRight ?
                     E.right(jsonObject) :
-                    E.left(Error("fields are match, but order is wrong."))
+                    // TODO: здесь то же самое, пустой caption
+                    E.left(new DetailedError("", "Fields are match, but order is wrong."))
             }
 
             return isFieldSetsEqual() ?
@@ -138,13 +202,13 @@ export function extractModel<T>(ModelType: Type<T>) {
             return A.uniq(eqString)(errors.map(getMessage))
         }
 
-        function mapModel(jsonObject: Object): TaskEither<Error, T> {
-            function simplifyValidationErrors(tErrors: t.Errors): Error {
+        function mapModel(jsonObject: Object): TaskEither<DetailedError, M> {
+            function simplifyValidationErrors(tErrors: t.Errors): DetailedError {
                 const formattedErrors = formatMapErrors(tErrors).join(" ")
-                const errorsMessage = `types are not compatible. Details: ${formattedErrors}`
 
-                console.log("MAP ERROR: ", errorsMessage)
-                return new Error(errorsMessage)
+                console.log("MAP ERROR: ", formattedErrors)
+                // TODO: снова пустой caption
+                return new DetailedError("", "Types are not compatible.", formattedErrors)
             }
 
             console.log("STEP: START MAPPING...")
@@ -159,7 +223,11 @@ export function extractModel<T>(ModelType: Type<T>) {
                     )(ModelCodec.decode(objectWithCheckedFieldSets))
                 ),
                 // TODO: добавить сюда или ещё куда-то pretty-вывод ВСЕХ полей Модели и полученного JSON
-                E.mapLeft(errors => new Error(`MODEL MAPPING PROBLEM. ${errors}`)),
+                E.mapLeft(error => {
+                    // TODO: МУТАБЕЛЬНОСТЬ! Подумать, так ли это критично и, если да, то как сделать .copy как в Скале
+                    error.caption = "MODEL MAPPING PROBLEM"
+                    return error
+                }),
                 TE.fromEither
             )
         }
@@ -168,20 +236,20 @@ export function extractModel<T>(ModelType: Type<T>) {
     }
 }
 
-export function resolveModel<T>(onSuccess: (model: T) => void, onFailure: (error: Error) => void) {
-    return function (modelTE: TaskEither<Error, T>) {
+export function resolveModel<M>(onSuccess: (model: M) => void, onFailure: (error: DetailedError) => void) {
+    return function (modelTE: TaskEither<DetailedError, M>) {
         console.log("STEP: RESOLVING")
         TE.fold(
-            (err: Error) => Task.of(onFailure(err)),
-            (model: T) => Task.of(onSuccess(model))
+            (err: DetailedError) => T.of(onFailure(err)),
+            (model: M) => T.of(onSuccess(model))
         )(modelTE)()
     }
 }
 
-export function fetchAndResolve<T>(url: string,
-                                   ModelType: Type<T>,
-                                   onSuccess: (model: T) => void,
-                                   onFailure: (err: Error) => void): void {
+export function fetchAndResolve<M>(url: string,
+                                   ModelType: Type<M>,
+                                   onSuccess: (model: M) => void,
+                                   onFailure: (err: DetailedError) => void): void {
     pipe(url,
         getResponse,
         getJsonObject,
