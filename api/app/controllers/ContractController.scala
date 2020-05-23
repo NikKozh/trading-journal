@@ -223,8 +223,9 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         }
     }
 
+    // Оставлено для дебага
     def ping(): Action[AnyContent] = Action { implicit request =>
-        BadRequest(Json.toJson(ApiError("DATABASE PROBLEM", "Id xxx not found")))
+        Ok(Json.toJson(Ping("main message", "up", 1)))
     }
 }
 
@@ -242,11 +243,11 @@ case class BinaryContractData(contractId: String, date: Timestamp)
 case class Ping(message: String, status: String, code: Int)
 
 object Ping {
-    implicit val pingWrites: OWrites[Ping] = Json.writes[Ping]
+    implicit val pingWrites: OWrites[Ping] = Json.writes
 }
 
 case class ApiError(caption: String, cause: String, details: Option[String] = None)
 
 object ApiError extends OptionNullJsonWriter {
-    implicit val apiErrorWrites: OWrites[ApiError] = Json.writes[ApiError]
+    implicit val apiErrorWrites: OWrites[ApiError] = Json.writes
 }

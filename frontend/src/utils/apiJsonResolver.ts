@@ -105,6 +105,9 @@ export function getJsonObject(responseTE: TaskEither<DetailedError, Response>): 
     })(responseTE)
 }
 
+// TODO: Подумать, насколько возможно выводить красивые ошибки для вложенных сущностей
+//  (сейчас декодер с ними в целом справляется, но всякие методы для проверки равенства полей
+//  и вывод путей до косячных значений - нет)
 export function extractModel<M>(ModelType: Type<M>) {
     return function (jsonObjectTE: TaskEither<DetailedError, Object>): TaskEither<DetailedError, M> {
         const ModelCodec = genIoType(ModelType)
