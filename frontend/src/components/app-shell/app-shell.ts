@@ -1,10 +1,5 @@
 import {customElement, html, LitElement, property as litProperty, query, TemplateResult} from "lit-element"
 import "mwc-app-dialog"
-import {MwcAppDialog} from "mwc-app-dialog/MwcAppDialog"
-import * as resolver from "../../utils/apiJsonResolver"
-import {pipe} from "fp-ts/es6/pipeable";
-import * as TE from "fp-ts/es6/TaskEither"
-import * as E from "fp-ts/es6/Either";
 import {DetailedError} from "../../models/DetailedError";
 import {ErrorAlert} from "../error-alert/error-alert"
 import {Message} from "../../models/Message";

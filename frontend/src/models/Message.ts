@@ -1,13 +1,13 @@
 import {Property as CodecProperty} from "@orchestrator/gen-io-ts";
 
 export class Message {
-    @CodecProperty({isRequired: true})
+    @CodecProperty({ isRequired: true })
     message: string
 
-    @CodecProperty({isRequired: true})
+    @CodecProperty({ isRequired: true })
     status: string
 
-    @CodecProperty({isRequired: true})
+    @CodecProperty({ isRequired: true })
     code: number
 
     constructor(message: string, status: string, code: number) {
