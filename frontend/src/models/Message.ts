@@ -1,6 +1,6 @@
 import {Property as CodecProperty} from "@orchestrator/gen-io-ts";
 
-export class Message {
+export default class Message {
     @CodecProperty({ isRequired: true })
     message: string
 

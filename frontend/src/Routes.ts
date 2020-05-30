@@ -1,4 +1,4 @@
-import Config from '../conf/Config';
+import Config from './Config';
 
 export default {
     pingMessage: `${Config.appUrl}/ping`
