@@ -2,7 +2,7 @@ import {Property as CodecProperty} from "@orchestrator/gen-io-ts";
 import * as O from "fp-ts/es6/Option";
 import {Option} from "fp-ts/es6/Option";
 
-export class DetailedError {
+export default class DetailedError {
     @CodecProperty({isRequired: true})
     caption: string
 

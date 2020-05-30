@@ -13,7 +13,7 @@ import {Type} from "@orchestrator/gen-io-ts/lib/types"
 import {genIoType} from "@orchestrator/gen-io-ts"
 import {eqString} from "fp-ts/es6/Eq"
 import {ordString} from "fp-ts/es6/Ord"
-import {DetailedError} from "../models/DetailedError"
+import DetailedError from "../models/DetailedError"
 
 // TODO: Подумать про вывод тела ответа запроса - насколько нужно и как сделать
 //  (там сейчас проблема, что тело достаётся через промис, который заблокирован другим потоком)
