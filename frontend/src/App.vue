@@ -1,9 +1,20 @@
 <template>
     <div id="app">
-        <h2>Message: {{ signal.message }}</h2>
-        <h2>Status: {{ signal.status }}</h2>
-        <h2>Code: {{ signal.code }}</h2>
-        <ErrorAlert ref="errorAlert" :error="fetchedError" v-on:close-alert="closeErrorAlert()"/>
+        <el-container>
+            <el-header>
+                <Header></Header>
+            </el-header>
+            <el-main>
+                <ErrorAlert ref="errorAlert"
+                            :error="fetchedError"
+                            v-on:close-alert="closeErrorAlert()"
+                ></ErrorAlert>
+
+                <h2>Message: {{ signal.message }}</h2>
+                <h2>Status: {{ signal.status }}</h2>
+                <h2>Code: {{ signal.code }}</h2>
+            </el-main>
+        </el-container>
     </div>
 </template>
 
@@ -15,9 +26,10 @@
     import Vue from "vue"
     import {Component} from "vue-property-decorator"
     import ErrorAlert from "./components/ErrorAlert.vue"
+    import Header from "./components/Header.vue"
 
     @Component({
-        components: { ErrorAlert }
+        components: { ErrorAlert, Header }
     })
     export default class App extends Vue {
         signal: Message = new Message("Loading...", "N/A", 0)
