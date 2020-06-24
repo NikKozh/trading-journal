@@ -1,28 +1,32 @@
 <template>
-    <el-table :data="contracts" border style="width: 100%">
-        <el-table-column prop="number" label="№"></el-table-column>
-        <el-table-column prop="contractType" label="Счёт"></el-table-column>
-        <el-table-column prop="created" label="Дата"></el-table-column>
-        <el-table-column prop="expiration" label="Экспирация"></el-table-column>
-        <el-table-column prop="fxSymbol" label="Актив"></el-table-column>
-        <el-table-column prop="direction" label="Прогноз"></el-table-column>
-        <el-table-column prop="buyPrice" label="Вложение"></el-table-column>
-        <el-table-column prop="profitPercent" label="%"></el-table-column>
-        <el-table-column prop="isWin" label="Результат"></el-table-column>
-        <el-table-column prop="income" label="Доход"></el-table-column>
-        <el-table-column prop="tags" label="Тэги"></el-table-column>
-        <el-table-column prop="isCorrect" label="По ТС?"></el-table-column>
-        <el-table-column prop="" label="Действия"></el-table-column>
-    </el-table>
+    <div id="contracts-table">
+        <h1>Список сделок</h1>
+        <el-table :data="contracts" border style="width: 100%">
+            <el-table-column prop="number" label="№"></el-table-column>
+            <el-table-column prop="contractType" label="Счёт"></el-table-column>
+            <el-table-column prop="created" label="Дата"></el-table-column>
+            <el-table-column prop="expiration" label="Экспирация"></el-table-column>
+            <el-table-column prop="fxSymbol" label="Актив"></el-table-column>
+            <el-table-column prop="direction" label="Прогноз"></el-table-column>
+            <el-table-column prop="buyPrice" label="Вложение"></el-table-column>
+            <el-table-column prop="profitPercent" label="%"></el-table-column>
+            <el-table-column prop="isWin" label="Результат"></el-table-column>
+            <el-table-column prop="income" label="Доход"></el-table-column>
+            <el-table-column prop="tags" label="Тэги"></el-table-column>
+            <el-table-column prop="isCorrect" label="По ТС?"></el-table-column>
+            <el-table-column prop="" label="Действия"></el-table-column>
+        </el-table>
+    </div>
 </template>
 
 <script lang="ts">
     import Vue from "vue"
     import {Component} from "vue-property-decorator";
-    import {fetchAndResolve, fetchAndResolveArray} from "../utils/apiJsonResolver";
+    import {fetchAndResolveArray} from "../utils/apiJsonResolver";
     import ApiRoutes from "../router/ApiRoutes";
     import DetailedError from "../models/DetailedError";
     import Contract from "../models/Contract";
+    import EventBus from "../utils/EventBus";
 
     @Component
     export default class ContractsTable extends Vue {
@@ -38,6 +42,7 @@
                 },
                 (error: DetailedError) => {
                     console.log("ERROR: ", error)
+                    EventBus.$emit("error-occurred", error)
                 }
             )
         }
