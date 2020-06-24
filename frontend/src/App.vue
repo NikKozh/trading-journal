@@ -1,5 +1,9 @@
 <template>
     <div id="app">
+        <ErrorAlert ref="errorAlert"
+                    :error="occurredError"
+                    v-on:close-alert="closeErrorAlert()"
+        ></ErrorAlert>
         <el-container>
             <el-header>
                 <Header></Header>
@@ -15,11 +19,30 @@
     import Vue from "vue"
     import {Component} from "vue-property-decorator"
     import Header from "./components/Header.vue"
+    import ErrorAlert from "./components/ErrorAlert.vue"
+    import EventBus from "./utils/EventBus"
+    import DetailedError from "./models/DetailedError"
 
     @Component({
-        components: { Header }
+        components: { Header, ErrorAlert }
     })
-    export default class App extends Vue { }
+    export default class App extends Vue {
+        // reactive TODO: написать свой декоратор?
+        occurredError: DetailedError | null = null
+
+        created() {
+            EventBus.$on("error-occurred", (error: DetailedError) => this.openErrorAlert(error))
+        }
+
+        openErrorAlert(error: DetailedError) {
+            // TODO: предусмотреть появление нескольких ошибок одновременно, сделав массив и переделав под это алерт
+            this.occurredError = error
+        }
+
+        closeErrorAlert() {
+            this.occurredError = null
+        }
+    }
 </script>
 
 <style scoped>
