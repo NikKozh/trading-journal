@@ -7,6 +7,7 @@ import utils.Utils.Math._
 import helpers.ContractHelper.ContractType._
 import helpers.ContractHelper.FxSymbol._
 import helpers.ContractHelper.ContractDirection._
+import play.api.libs.json.{Json, OWrites}
 
 case class Contract(id: String = UUID.randomUUID().toString,
                     number: Int,
@@ -15,13 +16,14 @@ case class Contract(id: String = UUID.randomUUID().toString,
                     expiration: Int = 5, // в минутах
                     fxSymbol: String, // TODO: FxSymbol
                     direction: String, // TODO: ContractDirection
-                    buyPrice: Option[Double], // в долларах
-                    profitPercent: Option[Double], // от 0 до 1; потенциальный, обозначается даже в убыточных сделках
                     isWin: Boolean,
                     screenshotPaths: String, // TODO: потом вообще убрать, это здесь не нужно
                     tags: String = "PA 5M; сетап ", // TODO: пока просто строкой с разделителем в виде запятой, потом надо разбить на Seq[String] или даже на Seq с отдельными объектами
                     isCorrect: Boolean, // вход по ТС? TODO: сделать опциональным
-                    description: String) {
+                    description: String,
+                    buyPrice: Option[Double], // в долларах
+                    profitPercent: Option[Double] // от 0 до 1; потенциальный, обозначается даже в убыточных сделках
+                   ) {
 
     def income: Option[Double] =
         for {
@@ -33,6 +35,8 @@ case class Contract(id: String = UUID.randomUUID().toString,
 }
 
 object Contract {
+    implicit val contractWrites: OWrites[Contract] = Json.writes
+
     def fill(dto: ContractData): Contract =
         Contract(
             number = dto.number,

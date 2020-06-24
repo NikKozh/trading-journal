@@ -1,6 +1,6 @@
 <template>
-    <div id="create-contract-view">
-        <h1>Создать сделку (с нуля)</h1>
+    <div id="stats-view">
+        <h1>Статистика</h1>
     </div>
 </template>
 
@@ -9,7 +9,7 @@
     import {Component} from "vue-property-decorator";
 
     @Component
-    export default class CreateContract extends Vue { }
+    export default class Stats extends Vue { }
 </script>
 
 <style scoped>

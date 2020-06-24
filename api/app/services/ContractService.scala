@@ -71,13 +71,13 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
             expiration,
             fxSymbol,
             direction,
-            buyPrice,
-            profitPercent,
             isWin,
             screenshotPaths,
             tags,
             isCorrect,
-            description
+            description,
+            buyPrice,
+            profitPercent,
         ) <> ((Contract.apply _).tupled, Contract.unapply)
     }
 
