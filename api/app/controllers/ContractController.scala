@@ -15,6 +15,7 @@ import play.api.libs.json.{JsArray, JsObject, Json, OWrites}
 import utils.ExceptionHandler
 import utils.Utils.Math._
 
+import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -32,6 +33,22 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         contractService.list.map(contracts =>
             Ok(views.html.contract.contractList(contracts.sortBy(_.created).reverse))
         )
+    }
+
+    def contractListNew: Action[AnyContent] = Action.async {
+        contractService
+            .list
+            .map(l => Json.toJson(l))
+            .map(Ok(_))
+            .recover { case e =>
+                BadRequest(Json.toJson(
+                    ApiError(
+                        caption = "DATABASE PROBLEM",
+                        cause = "Что-то пошло не так при попытке загрузить список сделок",
+                        details = Some(e.getMessage)
+                    )
+                ))
+            }
     }
 
     def addEditContract(id: Option[String] = None): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>

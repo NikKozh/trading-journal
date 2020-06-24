@@ -75,7 +75,13 @@ export function getJsonObject(responseTE: TaskEither<DetailedError, Response>): 
                     )
                 )
 
-            const extractionOrServerError = extractModel(DetailedError)(errorJsonObjectTE)
+            const extractionOrServerError =
+                pipe(errorJsonObjectTE,
+                    extractModel(DetailedError, false),
+                    TE.chain((extractionErrorModelTEArray: TaskEither<DetailedError, DetailedError>[]) =>
+                        extractionErrorModelTEArray[0] // по-идее, здесь всегда будет 1 элемент
+                    )
+                )
 
             // TODO: где-то здесь добавить приписку в начале к details, что сервер отдал некорректную модель ошибки
             return TE.getOrElse(T.of)(extractionOrServerError)
@@ -108,8 +114,8 @@ export function getJsonObject(responseTE: TaskEither<DetailedError, Response>): 
 // TODO: Подумать, насколько возможно выводить красивые ошибки для вложенных сущностей
 //  (сейчас декодер с ними в целом справляется, но всякие методы для проверки равенства полей
 //  и вывод путей до косячных значений - нет)
-export function extractModel<M>(ModelType: Type<M>) {
-    return function (jsonObjectTE: TaskEither<DetailedError, Object>): TaskEither<DetailedError, M> {
+export function extractModel<M>(ModelType: Type<M>, expectArray: boolean) {
+    return function (jsonObjectTE: TaskEither<DetailedError, Object>): TaskEither<DetailedError, TaskEither<DetailedError, M>[]> {
         const ModelCodec = genIoType(ModelType)
         const modelFakeObject = new ModelType() // небольшой хак, чтобы достать из модели список полей и их типы
 
@@ -205,6 +211,34 @@ export function extractModel<M>(ModelType: Type<M>) {
             return A.uniq(eqString)(errors.map(getMessage))
         }
 
+        function checkArrayInObject(jsonArrayOrObject: Object): TaskEither<DetailedError, Object[]> {
+            if (expectArray) {
+                if (Array.isArray(jsonArrayOrObject)) {
+                    return TE.right(jsonArrayOrObject)
+                } else {
+                    console.log("Single object from server: ", jsonArrayOrObject)
+                    // TODO: снова пустой caption
+                    return TE.left(new DetailedError(
+                        "MODEL MAPPING PROBLEM",
+                        "Expect array from server, got single object.",
+                        "For object structure output go to console."
+                    ))
+                }
+            } else {
+                if (Array.isArray(jsonArrayOrObject)) {
+                    console.log("Array from server: ", jsonArrayOrObject)
+                    // TODO: снова пустой caption
+                    return TE.left(new DetailedError(
+                        "MODEL MAPPING PROBLEM",
+                        "Expect single object from server, got array.",
+                        "For array output go to console."
+                    ))
+                } else {
+                    return TE.right([jsonArrayOrObject])
+                }
+            }
+        }
+
         function mapModel(jsonObject: Object): TaskEither<DetailedError, M> {
             function simplifyValidationErrors(tErrors: t.Errors): DetailedError {
                 const formattedErrors = formatMapErrors(tErrors).join(" ")
@@ -235,16 +269,66 @@ export function extractModel<M>(ModelType: Type<M>) {
             )
         }
 
-        return TE.chain(mapModel)(jsonObjectTE)
+        return pipe(jsonObjectTE,
+            TE.chain(checkArrayInObject),
+            TE.map(A.map(mapModel))
+        )
     }
 }
 
 export function resolveModel<M>(onSuccess: (model: M) => void, onFailure: (error: DetailedError) => void) {
-    return function (modelTE: TaskEither<DetailedError, M>) {
+    return function (modelTE: TaskEither<DetailedError, TaskEither<DetailedError, M>[]>) {
         console.log("STEP: RESOLVING")
         TE.fold(
             (err: DetailedError) => T.of(onFailure(err)),
-            (model: M) => T.of(onSuccess(model))
+            (modelArray: TaskEither<DetailedError, M>[]) =>
+                /* На самом деле здесь должен  быть только один объект в массиве, это гарантируется проверками
+                 * на предыдущих этапах, но на всякий случай, если функцию использовали отдельно от общего алгоритма,
+                 * здесь доп. проверка */
+                (modelArray.length === 1)
+                    ? TE.fold(
+                        (err2: DetailedError) => T.of(onFailure(err2)),
+                        (model: M) => T.of(onSuccess(model))
+                    )(modelArray[0])
+                    : (() => {
+                        console.log("Models array: ", modelArray)
+                        return T.of(onFailure(
+                            new DetailedError(
+                                "MODEL RESOLVING ERROR",
+                                "Expect single model after mapping, got array of models.",
+                                "For array output go to console."
+                            )
+                        ))
+                    })()
+        )(modelTE)()
+    }
+}
+
+export function resolveModelArray<M>(onSuccess: (models: M[]) => void, onFailure: (error: DetailedError) => void) {
+    return function (modelTE: TaskEither<DetailedError, TaskEither<DetailedError, M>[]>) {
+        console.log("STEP: RESOLVING")
+        TE.fold(
+            (err: DetailedError) => T.of(onFailure(err)),
+            (modelArray: TaskEither<DetailedError, M>[]) =>
+                pipe(modelArray,
+                    A.reduce(
+                        TE.right([] as M[]),
+                        // TODO: сейчас это позволяет вывести только первую ошибку из массива. Возможно, поменять на
+                        //  тип TaskEither<DetailedError[], M[]> и выводить потом все ошибки из массива?
+                        (acc: TaskEither<DetailedError, M[]>, model: TaskEither<DetailedError, M>) =>
+                            TE.fold(
+                                (err: DetailedError) => T.of(E.left(err)),
+                                (model: M) =>
+                                    TE.map((accModelArray: M[]) =>
+                                        [...accModelArray, model]
+                                    )(acc)
+                            )(model)
+                    ),
+                    TE.fold(
+                        (err: DetailedError) => T.of(onFailure(err)),
+                        (models: M[]) => T.of(onSuccess(models))
+                    )
+                )
         )(modelTE)()
     }
 }
@@ -256,7 +340,19 @@ export function fetchAndResolve<M>(url: string,
     pipe(url,
         getResponse,
         getJsonObject,
-        extractModel(ModelType),
+        extractModel(ModelType, false),
         resolveModel(onSuccess, onFailure)
+    )
+}
+
+export function fetchAndResolveArray<M>(url: string,
+                                        ModelType: Type<M>,
+                                        onSuccess: (models: M[]) => void,
+                                        onFailure: (err: DetailedError) => void): void {
+    pipe(url,
+        getResponse,
+        getJsonObject,
+        extractModel(ModelType, true),
+        resolveModelArray(onSuccess, onFailure)
     )
 }

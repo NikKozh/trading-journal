@@ -1,15 +1,15 @@
-import {Property as CodecProperty} from "@orchestrator/gen-io-ts";
-import * as O from "fp-ts/es6/Option";
-import {Option} from "fp-ts/es6/Option";
+import {Property as CodecProperty} from "@orchestrator/gen-io-ts"
+import * as O from "fp-ts/es6/Option"
+import {Option} from "fp-ts/es6/Option"
 
 export default class DetailedError {
-    @CodecProperty({isRequired: true})
+    @CodecProperty({ isRequired: true })
     caption: string
 
-    @CodecProperty({isRequired: true})
+    @CodecProperty({ isRequired: true })
     cause: string
 
-    @CodecProperty({type: String})
+    @CodecProperty({ type: String })
     details: Option<string>
 
     constructor(caption: string, cause: string, details?: string) {

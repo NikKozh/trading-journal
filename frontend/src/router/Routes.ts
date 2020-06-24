@@ -1,4 +1,5 @@
 export default {
     index: "/",
-    createContract: "/createContract"
+    createContract: "/createContract",
+    stats: "/stats"
 }

@@ -3,7 +3,7 @@
              class="el-menu-demo"
              mode="horizontal"
              menu-trigger="click"
-             :router="true"
+             router
     >
         <el-menu-item :index="routes.index">Главная</el-menu-item>
 

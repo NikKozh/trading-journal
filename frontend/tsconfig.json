@@ -4,10 +4,12 @@
         "strict": true,
         "target": "ES2019",
         "moduleResolution": "Node",
-        "emitDecoratorMetadata": true
+        "emitDecoratorMetadata": true,
+        "noEmit": true
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "index.ts"
     ],
     "exclude": [
         "node_modules",
