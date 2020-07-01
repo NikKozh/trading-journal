@@ -4,11 +4,11 @@
                     :error="occurredError"
                     v-on:close-alert="closeErrorAlert()"
         ></ErrorAlert>
-        <el-container>
+        <el-container id="main-container">
             <el-header>
                 <Header></Header>
             </el-header>
-            <el-main>
+            <el-main id="main-element">
                 <router-view></router-view>
             </el-main>
         </el-container>
@@ -45,5 +45,15 @@
     }
 </script>
 
-<style scoped>
+<style>
+    html, body, #app, #main-container, #main-view, #contracts-table {
+        height: 100%;
+    }
+    body {
+        margin: 0;
+    }
+    h1 {
+        margin: 0;
+        padding: 20px 0;
+    }
 </style>

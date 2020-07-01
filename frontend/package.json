@@ -4,8 +4,10 @@
     "type": "module",
     "dependencies": {
         "@orchestrator/gen-io-ts": "^3.0.1",
+        "date-fns": "^2.14.0",
         "element-ui": "^2.13.2",
         "fp-ts": "^2.5.4",
+        "fp-ts-contrib": "^0.1.17",
         "io-ts": "^2.2.2",
         "mw": "^1.3.4",
         "reflect-metadata": "^0.1.13",

@@ -1,6 +1,8 @@
 import {Property as CodecProperty} from "@orchestrator/gen-io-ts"
 import * as O from "fp-ts/es6/Option"
 import {Option} from "fp-ts/es6/Option"
+import {pipe} from "fp-ts/es6/pipeable"
+import {Do} from "fp-ts-contrib/es6/Do"
 
 export default class Contract {
     @CodecProperty({ isRequired: true })
@@ -71,7 +73,24 @@ export default class Contract {
         this.tags = tags
         this.isCorrect = isCorrect
         this.description = description
-        this.buyPrice = O.fromNullable(buyPrice)
-        this.profitPercent = O.fromNullable(profitPercent)
+        this.buyPrice = this.getFixedFloatOpt(buyPrice)
+        this.profitPercent = this.getFixedFloatOpt(profitPercent, 4)
+    }
+
+    private getFixedFloatOpt(nullableNumber: number | undefined, fixedTo: number = 2): Option<number> {
+        return pipe(nullableNumber,
+            O.fromNullable,
+            O.map((num: number) => Number.parseFloat(num.toFixed(fixedTo)))
+        )
+    }
+
+    income(): Option<number> {
+        return Do(O.option)
+            .bind("price", this.buyPrice)
+            .bind("percent", this.profitPercent)
+            .return(({price, percent}) => {
+                const float = this.isWin ? price * percent : -price
+                return Number.parseFloat(float.toFixed(2))
+            })
     }
 }
