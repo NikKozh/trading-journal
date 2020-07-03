@@ -1,5 +1,6 @@
 export default {
     index: "/",
     createContract: "/createContract",
-    stats: "/stats"
+    stats: "/stats",
+    contractDetails: "/contract" // /:id/:mode
 }
