@@ -1,8 +1,11 @@
 import {Property as CodecProperty} from "@orchestrator/gen-io-ts"
 import * as O from "fp-ts/es6/Option"
 import {Option} from "fp-ts/es6/Option"
+import * as A from "fp-ts/es6/Array"
 import {pipe} from "fp-ts/es6/pipeable"
 import {Do} from "fp-ts-contrib/es6/Do"
+import {formatBoolean, formatDate, formatFloat, formatMoney, formatOptional, formatPercent} from "../utils/Formatters"
+import {flow} from "fp-ts/es6/function"
 
 export default class Contract {
     @CodecProperty({ isRequired: true })
@@ -15,10 +18,18 @@ export default class Contract {
     contractType: string
 
     @CodecProperty({ isRequired: true, type: Number })
-    created: number // TODO: timestamp
+    created: number
+
+    createdF(formatString?: string): string {
+        return formatDate(this.created, formatString)
+    }
 
     @CodecProperty({ isRequired: true })
     expiration: number
+
+    expirationF(): string {
+        return String(this.expiration) + " мин."
+    }
 
     @CodecProperty({ isRequired: true })
     fxSymbol: string
@@ -29,8 +40,12 @@ export default class Contract {
     @CodecProperty({ isRequired: true })
     isWin: boolean
 
-    @CodecProperty({ isRequired: true })
-    screenshotPaths: string
+    isWinF(): string {
+        return formatBoolean("ПРИБЫЛЬ", "УБЫТОК")(this.isWin)
+    }
+
+    @CodecProperty({ isRequired: true, type: String })
+    screenshotPaths: Array<string>
 
     @CodecProperty({ isRequired: true })
     tags: string
@@ -38,14 +53,26 @@ export default class Contract {
     @CodecProperty({ isRequired: true })
     isCorrect: boolean
 
+    isCorrectF(): string {
+        return formatBoolean()(this.isCorrect)
+    }
+
     @CodecProperty({ isRequired: true })
     description: string
 
     @CodecProperty({ type: Number })
     buyPrice: Option<number>
 
+    buyPriceF(): string {
+        return formatOptional(formatMoney)(this.buyPrice)
+    }
+
     @CodecProperty({ type: Number })
     profitPercent: Option<number>
+
+    profitPercentF(): string {
+        return formatOptional(flow(formatPercent, formatFloat(2)))(this.profitPercent) + "%"
+    }
 
     constructor(id: string,
                 number: number,
@@ -69,12 +96,20 @@ export default class Contract {
         this.fxSymbol = fxSymbol
         this.direction = direction
         this.isWin = isWin
-        this.screenshotPaths = screenshotPaths
+        this.screenshotPaths = this.getCorrectScreenshotSrcs(screenshotPaths)
         this.tags = tags
         this.isCorrect = isCorrect
         this.description = description
         this.buyPrice = this.getFixedFloatOpt(buyPrice)
         this.profitPercent = this.getFixedFloatOpt(profitPercent, 4)
+    }
+
+    // TODO: временный хак, потом это будет не нужно
+    private getCorrectScreenshotSrcs(screenshotPaths: string | undefined): Array<string> {
+        return screenshotPaths ?
+            A.map((base64String: string) => `data:image/png;base64,${base64String}`)
+                 (screenshotPaths.split(";"))
+            : []
     }
 
     private getFixedFloatOpt(nullableNumber: number | undefined, fixedTo: number = 2): Option<number> {
@@ -88,9 +123,13 @@ export default class Contract {
         return Do(O.option)
             .bind("price", this.buyPrice)
             .bind("percent", this.profitPercent)
-            .return(({price, percent}) => {
+            .return(({ price, percent }) => {
                 const float = this.isWin ? price * percent : -price
                 return Number.parseFloat(float.toFixed(2))
             })
+    }
+
+    incomeF(): string {
+        return formatOptional(formatMoney)(this.income())
     }
 }

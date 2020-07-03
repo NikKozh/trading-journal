@@ -51,6 +51,29 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             }
     }
 
+    def contractCardNew(id: String): Action[AnyContent] = Action.async {
+        contractService
+            .get(id)
+            .map(_
+                .toRight(
+                    ApiError(
+                        caption = "CONTRACT NOT FOUND",
+                        cause = s"Сделка с id $id отсутствует в базе данных"
+                    )
+                )
+                .fold(error => BadRequest(Json.toJson(error)), contract => Ok(Json.toJson(contract)))
+            )
+            .recover { case e =>
+                BadRequest(Json.toJson(
+                    ApiError(
+                        caption = "DATABASE PROBLEM",
+                        cause = s"Что-то пошло не так при попытке загрузить сделку с id $id",
+                        details = Some(e.getMessage)
+                    )
+                ))
+            }
+    }
+
     def addEditContract(id: Option[String] = None): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
         id.map {
             contractService.get(_).map {

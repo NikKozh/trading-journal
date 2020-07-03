@@ -1,5 +1,4 @@
 GET     /                           controllers.ContractController.contractList
-GET     /contractList               controllers.ContractController.contractListNew
 
 GET     /addContractDraft           controllers.ContractController.addContractDraft()
 POST    /submitContractDraft        controllers.ContractController.submitContractDraft()
@@ -26,3 +25,6 @@ POST    /submitStrategyFilter       controllers.UserSettingController.submitStra
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
 GET     /ping                       controllers.ContractController.ping()
+
+GET     /contractList               controllers.ContractController.contractListNew
+GET     /contractDetails/:id        controllers.ContractController.contractCardNew(id: String)

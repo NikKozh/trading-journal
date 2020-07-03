@@ -1,7 +1,6 @@
 <template>
     <div id="app">
-        <ErrorAlert ref="errorAlert"
-                    :error="occurredError"
+        <ErrorAlert :error="occurredError"
                     v-on:close-alert="closeErrorAlert()"
         ></ErrorAlert>
         <el-container id="main-container">
@@ -46,6 +45,7 @@
 </script>
 
 <style>
+    /* TODO: завести для всего этого отдельный класс и не парить себе мозг с перечислением кучи id */
     html, body, #app, #main-container, #main-view, #contracts-table {
         height: 100%;
     }
@@ -55,5 +55,6 @@
     h1 {
         margin: 0;
         padding: 20px 0;
+        font-size: 24px;
     }
 </style>

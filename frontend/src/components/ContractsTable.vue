@@ -103,6 +103,7 @@
         formatBoolean,
         formatDate
     } from "../utils/Formatters"
+    import Routes from "../router/Routes"
 
     @Component
     export default class ContractsTable extends Vue {
@@ -128,32 +129,32 @@
 
         // FORMATTERS START ---------------------------------
 
-        buyPriceColFormatter(row: Contract, column: Object, cellValue: Option<number>): string {
-            return formatOptional(formatMoney)(cellValue)
+        buyPriceColFormatter(row: Contract): string {
+            return row.buyPriceF()
         }
 
-        profitPercentColFormatter(row: Contract, column: Object, cellValue: Option<number>): string {
-            return formatOptional(flow(formatPercent, formatFloat(2)))(cellValue) + "%"
+        profitPercentColFormatter(row: Contract): string {
+            return row.profitPercentF()
         }
 
-        isWinColFormatter(row: Contract, column: Object, cellValue: boolean): string {
-            return formatBoolean("ПРИБЫЛЬ", "УБЫТОК")(cellValue)
+        isWinColFormatter(row: Contract): string {
+            return row.isWinF()
         }
 
-        isCorrectColFormatter(row: Contract, column: Object, cellValue: boolean): string {
-            return formatBoolean()(cellValue)
+        isCorrectColFormatter(row: Contract): string {
+            return row.isCorrectF()
         }
 
         incomeColFormatter(row: Contract): string {
-            return formatOptional(formatMoney)(row.income())
+            return row.incomeF()
         }
 
-        expirationColFormatter(row: Contract, column: Object, cellValue: number): string {
-            return String(cellValue) + " мин."
+        expirationColFormatter(row: Contract): string {
+            return row.expirationF()
         }
 
         createdColFormatter(row: Contract): string {
-            return formatDate(row.created)
+            return row.createdF()
         }
 
         // FORMATTERS END ---------------------------------
@@ -164,16 +165,16 @@
 
         // HANDLERS START ---------------------------------
 
+        handleContractOpen(contract: Contract) {
+            this.$router.push({ path: `${Routes.contractDetails}/${contract.id}/view` })
+        }
+
         handleContractEdit(contract: Contract) {
-            this.$message(`Contract №${contract.number} edit`)
+            this.$router.push({ path: `${Routes.contractDetails}/${contract.id}/edit` })
         }
 
         handleContractDelete(contract: Contract) {
             this.$message(`Contract №${contract.number} delete`)
-        }
-
-        handleContractOpen(contract: Contract) {
-            this.$message(`Contract №${contract.number} open`)
         }
 
         // HANDLERS END ---------------------------------
