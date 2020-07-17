@@ -5,7 +5,7 @@
         </el-page-header>
         <template v-if="!!contract">
             <el-row>
-                <el-col :span="12">
+                <el-col :span="14">
                     <!--suppress HtmlUnknownTarget -->
                     <el-image v-if="contract.screenshotPaths.length > 0"
                               :src="contract.screenshotPaths[0]"
@@ -15,9 +15,9 @@
                               :preview-src-list="contract.screenshotPaths"
                     ></el-image>
                 </el-col>
-                <el-col :span="12" style="padding-left: 20px; padding-top: 42px">
+                <el-col :span="10" style="padding-left: 20px; padding-top: 42px">
                     <ContractView v-if="this.$route.params.mode === 'view'" :contract="contract"></ContractView>
-                    <ContractForm v-if="this.$route.params.mode === 'edit'"></ContractForm>
+                    <ContractForm v-if="this.$route.params.mode === 'edit'" :contract="contract"></ContractForm>
                 </el-col>
             </el-row>
         </template>

@@ -63,15 +63,16 @@ export default class Contract {
     @CodecProperty({ type: Number })
     buyPrice: Option<number>
 
-    buyPriceF(): string {
-        return formatOptional(formatMoney)(this.buyPrice)
+    buyPriceF(rawString: boolean = false): string {
+        return formatOptional(rawString ? formatFloat() : formatMoney)(this.buyPrice)
     }
 
     @CodecProperty({ type: Number })
     profitPercent: Option<number>
 
-    profitPercentF(): string {
-        return formatOptional(flow(formatPercent, formatFloat(2)))(this.profitPercent) + "%"
+    profitPercentF(rawString: boolean = false): string {
+        const optionalPercent = rawString ? "" : "%"
+        return formatOptional(flow(formatPercent, formatFloat(2)))(this.profitPercent) + optionalPercent
     }
 
     constructor(id: string,

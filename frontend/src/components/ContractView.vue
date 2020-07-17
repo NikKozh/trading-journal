@@ -4,6 +4,7 @@
         <ContractInfoBox label="Тип счёта">{{ contract.contractType }}</ContractInfoBox>
         <ContractInfoBox label="Актив">{{ contract.fxSymbol }}</ContractInfoBox>
         <ContractInfoBox label="Прогноз">{{ contract.direction }}</ContractInfoBox>
+        <ContractInfoBox label="Экспирация">{{ contract.expirationF() }}</ContractInfoBox>
 
         <el-divider class="contract-info-divider"></el-divider>
 
