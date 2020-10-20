@@ -11,7 +11,7 @@ import play.api.mvc._
 import services.ContractService
 import models.{Contract, ContractData, ContractDraftData, ContractDraftRawData}
 import play.api.Environment
-import play.api.libs.json.{JsArray, JsObject, Json, OWrites}
+import play.api.libs.json.{JsArray, JsObject, Json, OWrites, __}
 import utils.ExceptionHandler
 import utils.Utils.Math._
 
@@ -38,8 +38,9 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     def contractListNew: Action[AnyContent] = Action.async {
         contractService
             .list
-            .map(l => Json.toJson(l))
+            .map(Json.toJson[Seq[Contract]])
             .map(Ok(_))
+            // TODO: обобщить блок с .recover
             .recover { case e =>
                 BadRequest(Json.toJson(
                     ApiError(
@@ -72,6 +73,32 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                     )
                 ))
             }
+    }
+
+    def submitContractNew: Action[AnyContent] = Action.async { implicit request =>
+        // TODO: Вместо _.asOpt сделать просто .as и обернуть в Try, чтобы иметь информацию об ошибке парсинга
+        request.body.asJson.flatMap(_.asOpt[Contract]).map { contract =>
+            contractService
+                .save(contract)
+                .map(_ => Ok)
+                .recover { case e =>
+                    BadRequest(Json.toJson(
+                        ApiError(
+                            caption = "DATABASE PROBLEM",
+                            cause = s"Что-то пошло не так при попытке сохранить сделку ${contract.id}",
+                            details = Some(e.getMessage)
+                        )
+                    ))
+                }
+        }.getOrElse(
+            Future(BadRequest(Json.toJson(
+                ApiError(
+                    caption = "JSON PARSING PROBLEM",
+                    cause = s"Что-то пошло не так при попытке распознать JSON сущности Contract на бэкенде",
+                    details = Some("Проблема в теле запроса или в самом JSON")
+                )
+            )))
+        )
     }
 
     def addEditContract(id: Option[String] = None): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>

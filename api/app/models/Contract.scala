@@ -7,7 +7,9 @@ import utils.Utils.Math._
 import helpers.ContractHelper.ContractType._
 import helpers.ContractHelper.FxSymbol._
 import helpers.ContractHelper.ContractDirection._
-import play.api.libs.json.{Json, OWrites}
+import play.api.libs.json._
+import play.api.libs.json.Reads._
+import helpers.JsonHelper
 
 case class Contract(id: String = UUID.randomUUID().toString,
                     number: Int,
@@ -34,8 +36,9 @@ case class Contract(id: String = UUID.randomUUID().toString,
     def screenshots: Seq[String] = screenshotPaths.split(';')
 }
 
-object Contract {
+object Contract extends JsonHelper {
     implicit val contractWrites: OWrites[Contract] = Json.writes
+    implicit val contractReads: Reads[Contract] = Json.reads
 
     def fill(dto: ContractData): Contract =
         Contract(
