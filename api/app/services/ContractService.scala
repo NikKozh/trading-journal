@@ -17,7 +17,8 @@ trait ContractService {
     def save(contract: Contract): Future[Option[Contract]]
     /** @return удалили или нет */
     def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean]
-    def get(id: String): Future[Option[Contract]]
+    def get(id: String)(implicit ec: ExecutionContext): Future[Option[Contract]]
+    def get(idOpt: Option[String])(implicit ec: ExecutionContext): Future[Option[Contract]]
     def list: Future[Seq[Contract]]
 
     def getNewNumber(implicit ec: ExecutionContext): Future[Int] =
@@ -35,7 +36,8 @@ class ContractServiceInMemoryImpl extends ContractService {
 
     override def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean] = ???
 
-    override def get(id: String): Future[Option[Contract]] = Future(storage.get(id))(scala.concurrent.ExecutionContext.global)
+    override def get(id: String)(implicit ec: ExecutionContext): Future[Option[Contract]] = Future(storage.get(id))
+    override def get(idOpt: Option[String])(implicit ec: ExecutionContext): Future[Option[Contract]] = Future(idOpt.flatMap(storage.get))
 
     override def list: Future[Seq[Contract]] = Future.successful(storage.values.toSeq.sortBy(_.number))
 }
@@ -93,9 +95,12 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
         )
     }
 
-    override def get(id: String): Future[Option[Contract]] = db.run {
+    override def get(id: String)(implicit ec: ExecutionContext): Future[Option[Contract]] = db.run {
         contracts.filter(_.id === id).result.headOption
     }
+
+    override def get(idOpt: Option[String])(implicit ec: ExecutionContext): Future[Option[Contract]] =
+        idOpt.map(id => db.run { contracts.filter(_.id === id).result.headOption }).getOrElse(Future(None))
 
     override def list: Future[Seq[Contract]] = db.run {
         contracts.result
