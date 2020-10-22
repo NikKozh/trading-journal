@@ -67,7 +67,8 @@
             </el-form-item>
             <el-form-item label-width="0">
                 <el-button type="primary" @click="submitForm">Сохранить</el-button>
-                <el-button>Отмена</el-button> <!-- TODO: то же самое, что кнопка "Назад" на карточке -->
+                <!-- TODO: сейчас отмена не сбрасывает изменившиеся значения полей, надо сбрасывать -->
+                <el-button @click="handleCancel">Отмена</el-button>
             </el-form-item>
         </el-col>
     </el-form>
@@ -151,6 +152,10 @@
                     EventBus.$emit("error-occurred", error)
                 }
             )
+        }
+
+        handleCancel() {
+            this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/view` })
         }
     }
 </script>
