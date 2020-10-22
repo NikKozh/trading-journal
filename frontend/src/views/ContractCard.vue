@@ -1,7 +1,20 @@
 <template>
     <div id="contract-details">
         <el-page-header @back="handleBack" title="Назад">
-            <h1 slot="content" style="padding: 0">{{ headerContent }}</h1>
+            <h1 id="contract-header-text" slot="content">{{ headerContent }}</h1>
+            <el-tooltip v-if="this.$route.params.mode === 'view'"
+                        id="contract-header-button"
+                        slot="content"
+                        effect="dark"
+                        content="Редактировать"
+                        placement="top"
+            >
+                <el-button type="primary"
+                           icon="el-icon-edit"
+                           size="mini"
+                           @click="handleContractEdit"
+                ></el-button>
+            </el-tooltip>
         </el-page-header>
         <template v-if="!!contract">
             <el-row>
@@ -34,6 +47,7 @@
     import EventBus from "../utils/EventBus"
     import ContractForm from "../components/ContractForm.vue"
     import ContractView from "../components/ContractView.vue"
+    import Routes from "../router/Routes";
 
     @Component({
         components: { ContractForm, ContractView }
@@ -64,11 +78,25 @@
         handleBack() {
             this.$router.back() // TODO: добавить backUrl в параметрах и возвращаться по нему, если нет - то на главную
         }
+
+        handleContractEdit() {
+            this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/edit` })
+        }
     }
 </script>
 
 <style>
     #contract-details .contract-image img {
         object-position: right top;
+    }
+
+    #contract-header-text {
+        padding: 0;
+        float: left;
+    }
+
+    #contract-header-button {
+        margin-left: 10px;
+        float: right;
     }
 </style>
