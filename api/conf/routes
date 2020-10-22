@@ -30,3 +30,5 @@ GET     /api/contractList           controllers.ContractController.contractListN
 GET     /api/contractDetails/:id    controllers.ContractController.contractCardNew(id: String)
 
 POST    /api/submitContract         controllers.ContractController.submitContractNew
+
+GET     /api/deleteContract/:id         controllers.ContractController.deleteContractNew(id: String)

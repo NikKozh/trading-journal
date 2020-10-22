@@ -88,21 +88,11 @@
 <script lang="ts">
     import Vue from "vue"
     import {Component} from "vue-property-decorator"
-    import {fetchAndResolveArray} from "../utils/apiJsonResolver"
+    import {fetchAndResolveArray, submitWithRecovery} from "../utils/apiJsonResolver"
     import ApiRoutes from "../router/ApiRoutes"
     import DetailedError from "../models/DetailedError"
     import Contract from "../models/Contract"
     import EventBus from "../utils/EventBus"
-    import {Option} from "fp-ts/es6/Option"
-    import {flow} from "fp-ts/es6/function"
-    import {
-        formatOptional,
-        formatMoney,
-        formatPercent,
-        formatFloat,
-        formatBoolean,
-        formatDate
-    } from "../utils/Formatters"
     import Routes from "../router/Routes"
 
     @Component
@@ -111,7 +101,7 @@
 
         emptyText: string = "Данные загружаются..."
 
-        created() {
+        private loadContractsData() {
             fetchAndResolveArray(
                 ApiRoutes.contractList,
                 Contract,
@@ -125,6 +115,10 @@
                     EventBus.$emit("error-occurred", error)
                 }
             )
+        }
+
+        created() {
+            this.loadContractsData()
         }
 
         // FORMATTERS START ---------------------------------
@@ -174,7 +168,27 @@
         }
 
         handleContractDelete(contract: Contract) {
-            this.$message(`Contract №${contract.number} delete`)
+            this.$confirm(`Вы точно хотите удалить сделку №${contract.number} от ${contract.createdF()}?`, {
+                confirmButtonText: "Да",
+                cancelButtonText: "Отмена",
+                type: "warning"
+            }).then(() => {
+                submitWithRecovery(
+                    ApiRoutes.deleteContract(contract.id),
+                    () => {
+                        this.loadContractsData()
+                        this.$message({
+                            type: "success",
+                            message: "Сделка удалена"
+                        })
+                    },
+                    error => {
+                        console.log("ERROR: ", error)
+                        EventBus.$emit("error-occurred", error)
+                    }
+                )
+
+            })
         }
 
         // HANDLERS END ---------------------------------

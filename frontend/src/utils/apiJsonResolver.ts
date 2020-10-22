@@ -366,7 +366,7 @@ export function resolvePossibleErrorModel(onSuccess: () => void, onFailure: (err
 export function fetchAndResolve<M>(url: string,
                                    ModelType: Type<M>,
                                    onSuccess: (model: M) => void,
-                                   onFailure: (err: DetailedError) => void,
+                                   onFailure: (err: DetailedError) => void, // TODO: добавить дефолтную ошибку с отправкой в EventBus
                                    fetchProps?: RequestInit): void {
     pipe(url,
         getResponse(fetchProps),
@@ -379,7 +379,7 @@ export function fetchAndResolve<M>(url: string,
 export function fetchAndResolveArray<M>(url: string,
                                         ModelType: Type<M>,
                                         onSuccess: (models: M[]) => void,
-                                        onFailure: (err: DetailedError) => void,
+                                        onFailure: (err: DetailedError) => void, // TODO: добавить дефолтную ошибку с отправкой в EventBus
                                         fetchProps?: RequestInit): void {
     pipe(url,
         getResponse(fetchProps),
@@ -390,9 +390,9 @@ export function fetchAndResolveArray<M>(url: string,
 }
 
 export function submitWithRecovery(url: string,
-                                   fetchProps: RequestInit,
                                    onSuccess: () => void,
-                                   onFailure: (err: DetailedError) => void): void {
+                                   onFailure: (err: DetailedError) => void, // TODO: добавить дефолтную ошибку с отправкой в EventBus
+                                   fetchProps?: RequestInit): void {
     pipe(url,
         getResponse(fetchProps),
         getPossibleErrorModel,

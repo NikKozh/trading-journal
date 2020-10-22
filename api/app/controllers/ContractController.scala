@@ -27,6 +27,12 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                                   )(implicit ec: ExecutionContext)
     extends ExceptionHandler(mcc) {
 
+    private def contractNotFound(id: String) =
+        ApiError(
+            caption = "CONTRACT NOT FOUND",
+            cause = s"Сделка с id $id отсутствует в базе данных"
+        )
+
     def contractList: Action[AnyContent] = asyncActionWithExceptionPage {
         import utils.Utils.DateTime._
 
@@ -56,12 +62,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         contractService
             .get(id)
             .map(_
-                .toRight(
-                    ApiError(
-                        caption = "CONTRACT NOT FOUND",
-                        cause = s"Сделка с id $id отсутствует в базе данных"
-                    )
-                )
+                .toRight(contractNotFound(id))
                 .fold(error => BadRequest(Json.toJson(error)), contract => Ok(Json.toJson(contract)))
             )
             .recover { case e =>
@@ -99,6 +100,24 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                 )
             )))
         )
+    }
+
+    def deleteContractNew(id: String): Action[AnyContent] = Action.async { implicit request =>
+        contractService
+            .delete(id)
+            .map(isDeleted =>
+                if (isDeleted) Ok
+                else           BadRequest(Json.toJson(contractNotFound(id)))
+            )
+            .recover { case e =>
+                BadRequest(Json.toJson(
+                    ApiError(
+                        caption = "DATABASE PROBLEM",
+                        cause = s"Что-то пошло не так при попытке удалить сделку $id",
+                        details = Some(e.getMessage)
+                    )
+                ))
+            }
     }
 
     def addEditContract(id: Option[String] = None): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
