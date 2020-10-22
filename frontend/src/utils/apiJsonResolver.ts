@@ -5,6 +5,7 @@ import {Task} from "fp-ts/es6/Task"
 import {flow} from "fp-ts/es6/function"
 import {Either} from "fp-ts/es6/Either"
 import * as O from "fp-ts/es6/Option"
+import {Option} from "fp-ts/es6/Option"
 import * as A from "fp-ts/es6/Array"
 import {pipe} from "fp-ts/es6/pipeable"
 import * as E from "fp-ts/es6/Either"
@@ -18,21 +19,83 @@ import DetailedError from "../models/DetailedError"
 // TODO: Подумать про вывод тела ответа запроса - насколько нужно и как сделать
 //  (там сейчас проблема, что тело достаётся через промис, который заблокирован другим потоком)
 
-export function getResponse(url: string): TaskEither<DetailedError, Response> {
-    return TE.tryCatch(
-        () => {
-            console.log("STEP: START FETCHING...")
-            return fetch(url)
-        },
-        flow(
-            String,
-            errorStr => new DetailedError(
-                 "FETCH ERROR",
-                 errorStr,
-                 `Проблема с доступом к ресурсу по URL: ${url}`
-             )
+export function getResponse(fetchProps?: RequestInit) {
+    return function (url: string): TaskEither<DetailedError, Response> {
+        return TE.tryCatch(
+            () => {
+                console.log("STEP: START FETCHING...")
+                return fetch(url, fetchProps)
+            },
+            flow(
+                String,
+                errorStr => new DetailedError(
+                    "FETCH ERROR",
+                    errorStr,
+                    `Проблема с доступом к ресурсу по URL: ${url}`
+                )
+            )
         )
+    }
+}
+
+function resolveErrorModelJson(response: Response, responseJsonPromise: Promise<Object>): Task<DetailedError> {
+    const errorJsonObjectTE =
+        TE.tryCatch(
+            () => responseJsonPromise,
+            flow(
+                String,
+                errorStr => {
+                    console.log("Response body: ", response.body)
+                    return new DetailedError(
+                        "SERVER PROBLEM",
+                        errorStr,
+                        `Сервер ответил "400 BadRequest" при обращении к ${response.url}, но получить или
+                                 распарсить JSON с моделью ошибки не удалось. Тело ответа см. в консоли.`
+                    )
+                }
+            )
+        )
+
+    const extractionOrServerError =
+        pipe(errorJsonObjectTE,
+            extractModel(DetailedError, false),
+            TE.chain((extractionErrorModelTEArray: TaskEither<DetailedError, DetailedError>[]) =>
+                extractionErrorModelTEArray[0] // по-идее, здесь всегда будет 1 элемент
+            )
+        )
+
+    // TODO: где-то здесь добавить приписку в начале к details, что сервер отдал некорректную модель ошибки
+    return TE.getOrElse(T.of)(extractionOrServerError)
+}
+
+function otherServerResponseError(response: Response): DetailedError {
+    console.log("Response body: ", response)
+    return new DetailedError(
+        "RESPONSE ERROR",
+        `Response status "${response.status} ${response.statusText}" for URL ${response.url}`,
+        `Некорректный ответ от сервера. Тело ответа см. в консоли.`
     )
+}
+
+export function getPossibleErrorModel(responseTE: TaskEither<DetailedError, Response>): Task<Option<DetailedError>> {
+    return TE.fold<DetailedError, Response, Option<DetailedError>>(
+        (error: DetailedError) => T.of(O.some(error)),
+        (response: Response) => {
+            switch (response.status) {
+                case 200: // OK
+                    return T.of(O.none)
+
+                case 400: // BadRequest
+                    const responseJsonPromise: Promise<Object> = response.json()
+                    return T.map((error: DetailedError) => O.some(error))
+                                (resolveErrorModelJson(response, responseJsonPromise))
+
+                // TODO: добавить отдельную обработку для 404 (т.к. частый кейс)
+
+                default: // Other
+                    return T.of(O.some(otherServerResponseError(response)))
+            }
+    })(responseTE)
 }
 
 export function getJsonObject(responseTE: TaskEither<DetailedError, Response>): TaskEither<DetailedError, Object> {
@@ -57,56 +120,17 @@ export function getJsonObject(responseTE: TaskEither<DetailedError, Response>): 
             )
         }
 
-        function resolveErrorModelJson(): Task<DetailedError> {
-            const errorJsonObjectTE = 
-                TE.tryCatch(
-                    () => responseJsonPromise,
-                    flow(
-                        String,
-                        errorStr => {
-                            console.log("Response body: ", response.body)
-                            return new DetailedError(
-                                "SERVER PROBLEM",
-                                errorStr,
-                                `Сервер ответил "400 BadRequest" при обращении к ${response.url}, но получить или
-                                 распарсить JSON с моделью ошибки не удалось. Тело ответа см. в консоли.`
-                            )
-                        }
-                    )
-                )
-
-            const extractionOrServerError =
-                pipe(errorJsonObjectTE,
-                    extractModel(DetailedError, false),
-                    TE.chain((extractionErrorModelTEArray: TaskEither<DetailedError, DetailedError>[]) =>
-                        extractionErrorModelTEArray[0] // по-идее, здесь всегда будет 1 элемент
-                    )
-                )
-
-            // TODO: где-то здесь добавить приписку в начале к details, что сервер отдал некорректную модель ошибки
-            return TE.getOrElse(T.of)(extractionOrServerError)
-        }
-
-        function otherServerResponseError(): DetailedError {
-            console.log("Response body: ", response)
-            return new DetailedError(
-                "RESPONSE ERROR",
-                `Response status "${response.status} ${response.statusText}" for URL ${response.url}`,
-                `Некорректный ответ от сервера. Тело ответа см. в консоли.`
-            )
-        }
-
         switch (response.status) {
             case 200: // OK
                 return resolveModelJson()
 
             case 400: // BadRequest
-                return TE.leftTask(resolveErrorModelJson())
+                return TE.leftTask(resolveErrorModelJson(response, responseJsonPromise))
 
             // TODO: добавить отдельную обработку для 404 (т.к. частый кейс)
 
             default: // Other
-                return TE.left(otherServerResponseError())
+                return TE.left(otherServerResponseError(response))
         }
     })(responseTE)
 }
@@ -333,12 +357,19 @@ export function resolveModelArray<M>(onSuccess: (models: M[]) => void, onFailure
     }
 }
 
+export function resolvePossibleErrorModel(onSuccess: () => void, onFailure: (error: DetailedError) => void) {
+    return function (serverErrorTO: Task<Option<DetailedError>>) {
+        T.map(O.fold(onSuccess, onFailure))(serverErrorTO)()
+    }
+}
+
 export function fetchAndResolve<M>(url: string,
                                    ModelType: Type<M>,
                                    onSuccess: (model: M) => void,
-                                   onFailure: (err: DetailedError) => void): void {
+                                   onFailure: (err: DetailedError) => void,
+                                   fetchProps?: RequestInit): void {
     pipe(url,
-        getResponse,
+        getResponse(fetchProps),
         getJsonObject,
         extractModel(ModelType, false),
         resolveModel(onSuccess, onFailure)
@@ -348,11 +379,23 @@ export function fetchAndResolve<M>(url: string,
 export function fetchAndResolveArray<M>(url: string,
                                         ModelType: Type<M>,
                                         onSuccess: (models: M[]) => void,
-                                        onFailure: (err: DetailedError) => void): void {
+                                        onFailure: (err: DetailedError) => void,
+                                        fetchProps?: RequestInit): void {
     pipe(url,
-        getResponse,
+        getResponse(fetchProps),
         getJsonObject,
         extractModel(ModelType, true),
         resolveModelArray(onSuccess, onFailure)
+    )
+}
+
+export function submitWithRecovery(url: string,
+                                   fetchProps: RequestInit,
+                                   onSuccess: () => void,
+                                   onFailure: (err: DetailedError) => void): void {
+    pipe(url,
+        getResponse(fetchProps),
+        getPossibleErrorModel,
+        resolvePossibleErrorModel(onSuccess, onFailure)
     )
 }

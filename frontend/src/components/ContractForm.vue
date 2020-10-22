@@ -79,8 +79,10 @@
     import Contract from "../models/Contract"
     import * as O from "fp-ts/es6/Option"
     import {smartJsonStringify} from "../utils/Helper"
-    import ApiRoutes from "../router/ApiRoutes";
-    import Routes from "../router/Routes";
+    import ApiRoutes from "../router/ApiRoutes"
+    import Routes from "../router/Routes"
+    import {submitWithRecovery} from "../utils/apiJsonResolver"
+    import EventBus from "../utils/EventBus"
 
     @Component
     export default class ContractForm extends Vue {
@@ -133,17 +135,22 @@
             }
             // console.log("SUBMIT contract: ", this.contract)
             // console.log("Contract json: ", smartJsonStringify(this.contract))
-
-            // TODO: обобщить POST отправку и обработку ошибок в apiJsonResolver
-            fetch(ApiRoutes.submitContract, {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json'
+            submitWithRecovery(
+                ApiRoutes.submitContract,
+                {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: smartJsonStringify(this.contract)
                 },
-                body: smartJsonStringify(this.contract)
-            }) // TODO: обобщить как-то переход по ссылке с параметрами, чтобы не писать каждый раз руками эту конструкцию
-            .then(_ => this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/view` }))
-            .catch(error => alert(`Ошибка при отправке сделки на сервер: ${error}`))
+                // TODO: обобщить как-то переход по ссылке с параметрами, чтобы не писать каждый раз руками эту конструкцию
+                () => this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/view` }),
+                error => {
+                    console.log("ERROR: ", error)
+                    EventBus.$emit("error-occurred", error)
+                }
+            )
         }
     }
 </script>
