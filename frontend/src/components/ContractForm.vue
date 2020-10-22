@@ -138,18 +138,18 @@
             // console.log("Contract json: ", smartJsonStringify(this.contract))
             submitWithRecovery(
                 ApiRoutes.submitContract,
+                // TODO: обобщить как-то переход по ссылке с параметрами, чтобы не писать каждый раз руками эту конструкцию
+                () => this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/view` }),
+                error => {
+                    console.log("ERROR: ", error)
+                    EventBus.$emit("error-occurred", error)
+                },
                 {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: smartJsonStringify(this.contract)
-                },
-                // TODO: обобщить как-то переход по ссылке с параметрами, чтобы не писать каждый раз руками эту конструкцию
-                () => this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/view` }),
-                error => {
-                    console.log("ERROR: ", error)
-                    EventBus.$emit("error-occurred", error)
                 }
             )
         }
