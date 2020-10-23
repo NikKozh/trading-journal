@@ -3,6 +3,7 @@ import { ru } from "date-fns/locale"
 import {pipe} from "fp-ts/es6/pipeable"
 import {Option} from "fp-ts/es6/Option"
 import * as O from "fp-ts/es6/Option"
+import {identity} from "fp-ts/es6/function"
 
 export function formatDate(date: Date | number, formatString: string = 'dd.MM.yyyy') {
     return formatWithOptions({ locale: ru }, formatString, date)
@@ -14,17 +15,17 @@ export function formatBoolean(stringOnTrue: string = "ДА", stringOnFalse: stri
     }
 }
 
-export function formatFloat(fixedTo: number = 2) {
+export function formatFloat(fixedTo: number = 2, stringCorrecter: (result: string) => string = identity) {
     return function (float: number): string {
-        return float.toFixed(fixedTo)
+        return stringCorrecter(float.toFixed(fixedTo))
     }
 }
 
-export function formatOptional<A>(mapF: (value: A) => string = String) {
+export function formatOptional<A>(mapF: (value: A) => string = String, onNone: string = "") {
     return function (option: Option<A>): string {
         return pipe(option,
             O.map(mapF),
-            O.getOrElse(() => "")
+            O.getOrElse(() => onNone)
         )
     }
 }

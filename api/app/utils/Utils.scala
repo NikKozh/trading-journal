@@ -32,4 +32,18 @@ object Utils {
         def trimToOption(s: String): Option[String] = trimToOption(Option(s))
         def trimToOption(opt: Option[String]): Option[String] = opt.map(_.trim).filter(_.nonEmpty)
     }
+
+    // TODO: тот же вопрос про пакет хелперов, пока запихну сюда
+    object SeqHelper {
+        // TODO: после добавления в проект Cats убрать эту реализацию, заменить на:
+        //       https://stackoverflow.com/a/52547302/10253418
+        def seqToOpt[A](seq: Seq[Option[A]]): Option[Seq[A]] =
+            seq.foldLeft(Option(Seq.empty[A])){
+                (res, opt) =>
+                    for {
+                        seq <- res
+                        v <- opt
+                    } yield seq :+ v
+            }
+    }
 }

@@ -64,15 +64,17 @@ export default class Contract {
     buyPrice: Option<number>
 
     buyPriceF(rawString: boolean = false): string {
-        return formatOptional(rawString ? formatFloat() : formatMoney)(this.buyPrice)
+        return formatOptional(rawString ? formatFloat() : formatMoney, "N/A")(this.buyPrice)
     }
 
     @CodecProperty({ type: Number })
     profitPercent: Option<number>
 
     profitPercentF(rawString: boolean = false): string {
-        const optionalPercent = rawString ? "" : "%"
-        return formatOptional(flow(formatPercent, formatFloat(2)))(this.profitPercent) + optionalPercent
+        function stringCorrecter(percentStr: string): string {
+            return percentStr + (rawString ? "" : "%")
+        }
+        return formatOptional(flow(formatPercent, formatFloat(2, stringCorrecter)), "N/A")(this.profitPercent)
     }
 
     constructor(id: string,
@@ -105,9 +107,26 @@ export default class Contract {
         this.profitPercent = this.getFixedFloatOpt(profitPercent, 4)
     }
 
+    static getEmpty(id: string = "", number: number = 0, created: number = 0): Contract {
+        return new this(
+            "",
+            0,
+            "",
+            0,
+            0,
+            "",
+            "",
+            false,
+            "",
+            "",
+            false,
+            ""
+        )
+    }
+
     // TODO: временный хак, потом это будет не нужно
     private getCorrectScreenshotSrcs(screenshotPaths: string | undefined): Array<string> {
-        return screenshotPaths ?
+        return screenshotPaths && screenshotPaths.length > 0 ?
             A.map((base64String: string) => `data:image/png;base64,${base64String}`)
                  (screenshotPaths.split(";"))
             : []
@@ -131,6 +150,6 @@ export default class Contract {
     }
 
     incomeF(): string {
-        return formatOptional(formatMoney)(this.income())
+        return formatOptional(formatMoney, "N/A")(this.income())
     }
 }

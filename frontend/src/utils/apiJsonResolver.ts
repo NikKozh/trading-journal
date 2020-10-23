@@ -15,6 +15,7 @@ import {genIoType} from "@orchestrator/gen-io-ts"
 import {eqString} from "fp-ts/es6/Eq"
 import {ordString} from "fp-ts/es6/Ord"
 import DetailedError from "../models/DetailedError"
+import EventBus from "./EventBus";
 
 // TODO: Подумать про вывод тела ответа запроса - насколько нужно и как сделать
 //  (там сейчас проблема, что тело достаётся через промис, который заблокирован другим потоком)
@@ -363,10 +364,20 @@ export function resolvePossibleErrorModel(onSuccess: () => void, onFailure: (err
     }
 }
 
+export function defaultActionOnError(additionalAction?: (err: DetailedError) => void) {
+    return function(error: DetailedError): void {
+        console.log("ERROR: ", error)
+        EventBus.$emit("error-occurred", error)
+        if (additionalAction) {
+            additionalAction(error)
+        }
+    }
+}
+
 export function fetchAndResolve<M>(url: string,
                                    ModelType: Type<M>,
                                    onSuccess: (model: M) => void,
-                                   onFailure: (err: DetailedError) => void, // TODO: добавить дефолтную ошибку с отправкой в EventBus
+                                   onFailure: (err: DetailedError) => void = defaultActionOnError(),
                                    fetchProps?: RequestInit): void {
     pipe(url,
         getResponse(fetchProps),
@@ -379,7 +390,7 @@ export function fetchAndResolve<M>(url: string,
 export function fetchAndResolveArray<M>(url: string,
                                         ModelType: Type<M>,
                                         onSuccess: (models: M[]) => void,
-                                        onFailure: (err: DetailedError) => void, // TODO: добавить дефолтную ошибку с отправкой в EventBus
+                                        onFailure: (err: DetailedError) => void = defaultActionOnError(),
                                         fetchProps?: RequestInit): void {
     pipe(url,
         getResponse(fetchProps),
@@ -391,7 +402,7 @@ export function fetchAndResolveArray<M>(url: string,
 
 export function submitWithRecovery(url: string,
                                    onSuccess: () => void,
-                                   onFailure: (err: DetailedError) => void, // TODO: добавить дефолтную ошибку с отправкой в EventBus
+                                   onFailure: (err: DetailedError) => void = defaultActionOnError(),
                                    fetchProps?: RequestInit): void {
     pipe(url,
         getResponse(fetchProps),

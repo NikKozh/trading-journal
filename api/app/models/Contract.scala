@@ -9,7 +9,7 @@ import helpers.ContractHelper.FxSymbol._
 import helpers.ContractHelper.ContractDirection._
 import play.api.libs.json._
 import play.api.libs.json.Reads._
-import helpers.JsonHelper
+import helpers.{JsonHelper, OptionNullJsonWriter}
 
 case class Contract(id: String = UUID.randomUUID().toString,
                     number: Int,
@@ -36,7 +36,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
     def screenshots: Seq[String] = screenshotPaths.split(';')
 }
 
-object Contract extends JsonHelper {
+object Contract extends JsonHelper with OptionNullJsonWriter {
     implicit val contractWrites: OWrites[Contract] = Json.writes
     implicit val contractReads: Reads[Contract] = Json.reads
 
