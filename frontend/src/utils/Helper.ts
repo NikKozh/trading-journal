@@ -12,6 +12,8 @@ function jsonReplacer<T>(key: string, value: T | Option<T>): T | string | null {
         // срезаем "data:image/png;base64," и оставляем только сам BASE64
         // TODO: схлопываем массив до строки, чтобы соответствовать временной модели с бэкенда (вернуть потом как было)
         return A.map((el: string) => el.startsWith("data:image/png;base64,") ? el.slice(22) : el)(value).join(";")
+    } else if (Array.isArray(value) && (value.length === 0)) {
+        return ""
     }
     return value
 }

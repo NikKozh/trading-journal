@@ -88,7 +88,7 @@
 <script lang="ts">
     import Vue from "vue"
     import {Component} from "vue-property-decorator"
-    import {fetchAndResolveArray, submitWithRecovery} from "../utils/apiJsonResolver"
+    import {defaultActionOnError, fetchAndResolveArray, submitWithRecovery} from "../utils/apiJsonResolver"
     import ApiRoutes from "../router/ApiRoutes"
     import DetailedError from "../models/DetailedError"
     import Contract from "../models/Contract"
@@ -109,11 +109,7 @@
                     console.log("DONE: ", contracts)
                     this.contracts = contracts
                 },
-                (error: DetailedError) => {
-                    console.log("ERROR: ", error)
-                    this.emptyText = "Произошла ошибка при загрузке данных!"
-                    EventBus.$emit("error-occurred", error)
-                }
+                defaultActionOnError(_ => this.emptyText = "Произошла ошибка при загрузке данных!")
             )
         }
 
@@ -181,13 +177,8 @@
                             type: "success",
                             message: "Сделка удалена"
                         })
-                    },
-                    error => {
-                        console.log("ERROR: ", error)
-                        EventBus.$emit("error-occurred", error)
                     }
                 )
-
             })
         }
 

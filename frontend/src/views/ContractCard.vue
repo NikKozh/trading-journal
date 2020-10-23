@@ -2,7 +2,7 @@
     <div id="contract-details">
         <el-page-header @back="handleBack" title="Назад">
             <h1 id="contract-header-text" slot="content">{{ headerContent }}</h1>
-            <el-tooltip v-if="this.$route.params.mode === 'view'"
+            <el-tooltip v-if="this.$route.params.mode === 'view' && this.contract"
                         id="contract-header-button"
                         slot="content"
                         effect="dark"
@@ -21,14 +21,14 @@
                 <el-col :span="14">
                     <!--suppress HtmlUnknownTarget -->
                     <el-image v-if="contract.screenshotPaths.length > 0"
+                              id="contract-screenshots-panel"
                               :src="contract.screenshotPaths[0]"
                               class="contract-image"
-                              style="width: 100%; height: 916px"
                               fit="none"
                               :preview-src-list="contract.screenshotPaths"
                     ></el-image>
                 </el-col>
-                <el-col :span="10" style="padding-left: 20px; padding-top: 42px">
+                <el-col id="contract-details-panel" :span="10">
                     <ContractView v-if="this.$route.params.mode === 'view'" :contract="contract"></ContractView>
                     <ContractForm v-if="this.$route.params.mode === 'edit'" :contract="contract"></ContractForm>
                 </el-col>
@@ -41,7 +41,7 @@
     import Vue from "vue"
     import {Component} from "vue-property-decorator"
     import Contract from "../models/Contract"
-    import {fetchAndResolve} from "../utils/apiJsonResolver"
+    import {defaultActionOnError, fetchAndResolve} from "../utils/apiJsonResolver"
     import ApiRoutes from "../router/ApiRoutes"
     import DetailedError from "../models/DetailedError"
     import EventBus from "../utils/EventBus"
@@ -67,11 +67,7 @@
                     this.contract = contract
                     this.headerContent = `Сделка №${this.contract.number} от ${this.contract.createdF()}` // TODO: вынести в watcher?
                 },
-                (error: DetailedError) => {
-                    console.log("ERROR: ", error)
-                    this.headerContent = "ОШИБКА"
-                    EventBus.$emit("error-occurred", error)
-                }
+                defaultActionOnError(_ => this.headerContent = "ОШИБКА")
             )
         }
 
@@ -80,7 +76,9 @@
         }
 
         handleContractEdit() {
-            this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/edit` })
+            if (this.contract) {
+                this.$router.push({path: `${Routes.contractDetails}/${this.contract.id}/edit`})
+            }
         }
     }
 </script>
@@ -98,5 +96,15 @@
     #contract-header-button {
         margin-left: 10px;
         float: right;
+    }
+
+    #contract-screenshots-panel {
+        width: 100%;
+        height: 916px;
+    }
+
+    #contract-details-panel {
+        padding-left: 20px;
+        padding-top: 42px;
     }
 </style>

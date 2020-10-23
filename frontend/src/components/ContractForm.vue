@@ -1,14 +1,13 @@
 <template>
-    <el-form :model="contract" :ref="contract" :rules="validationRules" label-width="130px" label-position="left">
+    <el-form :model="contract" ref="contractRef" :rules="validationRules" label-width="130px" label-position="left">
         <el-col :span="12">
-            <!--        <el-form-item label="Номер сделки">
-            <el-input-number disabled v-model="contract.number"></el-input-number>
-        </el-form-item>-->
+            <el-form-item v-if="isContractNew()" label="Номер сделки">
+                <el-input-number v-model="contract.number"></el-input-number>
+            </el-form-item>
             <el-form-item label="Дата сделки" prop="created">
                 <el-date-picker v-model="contract.created" type="date" format="dd.MM.yyyy" value-format="timestamp">
                 </el-date-picker>
             </el-form-item>
-
             <el-form-item label="Тип счёта" prop="contractType">
                 <el-select v-model="contract.contractType" placeholder="Тип счёта">
                     <!-- TODO: server-side options -->
@@ -59,6 +58,9 @@
             </el-form-item>
         </el-col>
         <el-col>
+            <el-form-item v-if="isContractNew()" label="Скриншоты">
+                <el-input :value="screenshotsPath" @input="handleScreenshotsPathInput"></el-input>
+            </el-form-item>
             <el-form-item label="Тэги">
                 <el-input v-model="contract.tags"></el-input>
             </el-form-item>
@@ -82,27 +84,35 @@
     import {smartJsonStringify} from "../utils/Helper"
     import ApiRoutes from "../router/ApiRoutes"
     import Routes from "../router/Routes"
-    import {submitWithRecovery} from "../utils/apiJsonResolver"
-    import EventBus from "../utils/EventBus"
+    import {defaultActionOnError, submitWithRecovery} from "../utils/apiJsonResolver"
+    import {Form} from "element-ui"
 
     @Component
     export default class ContractForm extends Vue {
         @Prop()
         contract!: Contract
 
+        $refs!: {
+            contractRef: Form
+        }
+
+        isContractNew(): boolean {
+            return this.$router.currentRoute.path === Routes.createContract
+        }
+
         // TODO: обобщить повторяющиеся валидаторы
         validationRules = {
             created: [
-                { type: 'date', required: true, message: 'Это поле обязательно для заполнения', trigger: 'blur' }
+                { type: 'date', required: true, message: 'Это поле обязательно для заполнения', trigger: 'change' }
             ],
             contractType: [
-                { required: true, message: 'Это поле обязательно для заполнения', trigger: 'blur' }
+                { required: true, message: 'Это поле обязательно для заполнения', trigger: 'change' }
             ],
             fxSymbol: [
-                { required: true, message: 'Это поле обязательно для заполнения', trigger: 'blur' }
+                { required: true, message: 'Это поле обязательно для заполнения', trigger: 'change' }
             ],
             direction: [
-                { required: true, message: 'Это поле обязательно для заполнения', trigger: 'blur' }
+                { required: true, message: 'Это поле обязательно для заполнения', trigger: 'change' }
             ],
             expiration: [
                 { required: true, message: 'Это поле обязательно для заполнения', trigger: 'blur' }
@@ -111,6 +121,7 @@
 
         buyPrice: number = 0
         profitPercent: number = 0
+        screenshotsPath: string = ""
 
         created() {
             this.buyPrice = this.contract ? Number.parseFloat(this.contract.buyPriceF(true)) : 0
@@ -127,31 +138,42 @@
             this.profitPercent = value
         }
 
-        submitForm(): void {
+        handleScreenshotsPathInput(value: string): void {
+            this.contract.screenshotPaths = value.split(";")
+            this.screenshotsPath = value
+        }
+
+        private prepareContractSubmit() {
             if (O.exists(n => n === 0 || n === undefined)(this.contract.buyPrice)) {
                 this.contract.buyPrice = O.none
             }
             if (O.exists((n: number) => n === 0 || n === undefined || Number.isNaN(n))(this.contract.profitPercent)) {
                 this.contract.profitPercent = O.none
             }
-            // console.log("SUBMIT contract: ", this.contract)
-            // console.log("Contract json: ", smartJsonStringify(this.contract))
-            submitWithRecovery(
-                ApiRoutes.submitContract,
-                // TODO: обобщить как-то переход по ссылке с параметрами, чтобы не писать каждый раз руками эту конструкцию
-                () => this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/view` }),
-                error => {
-                    console.log("ERROR: ", error)
-                    EventBus.$emit("error-occurred", error)
-                },
-                {
-                    method: "POST",
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: smartJsonStringify(this.contract)
+        }
+
+        submitForm() {
+            (this.$refs.contractRef as Form).validate((valid: boolean) => {
+                if (valid) {
+                    this.prepareContractSubmit()
+
+                    submitWithRecovery(
+                        ApiRoutes.submitContract,
+                        // TODO: обобщить как-то переход по ссылке с параметрами, чтобы не писать каждый раз руками эту конструкцию
+                        () => this.$router.push({path: `${Routes.contractDetails}/${this.contract.id}/view`}),
+                        defaultActionOnError(),
+                        {
+                            method: "POST",
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: smartJsonStringify(this.contract)
+                        }
+                    )
+                } else {
+                    return false
                 }
-            )
+            })
         }
 
         handleCancel() {
