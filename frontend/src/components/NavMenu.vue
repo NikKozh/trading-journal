@@ -11,7 +11,7 @@
             <template slot="title">Создать сделку</template>
 
             <el-menu-item :index="routes.createContract">С нуля</el-menu-item>
-            <el-menu-item index="2-2">Предзаполнить</el-menu-item>
+            <el-menu-item :index="routes.prefillContract">Предзаполнить</el-menu-item>
         </el-submenu>
 
         <el-menu-item :index="routes.stats">Статистика</el-menu-item>

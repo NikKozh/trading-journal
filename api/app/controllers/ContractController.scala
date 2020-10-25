@@ -5,20 +5,19 @@ import java.time.{Instant, LocalDateTime, Month, ZoneId, ZoneOffset}
 import java.util.UUID
 
 import helpers.ContractHelper._
-import helpers.{BinaryHelper, ContractHelper, OptionNullJsonWriter, ScreenshotHelper}
+import helpers.{BinaryHelper, ContractControllerHelper, ContractHelper, OptionNullJsonWriter, ScreenshotHelper}
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
 import models.{Contract, ContractData, ContractDraftData, ContractDraftRawData}
 import play.api.Environment
-import play.api.libs.json.{JsArray, JsObject, Json, OWrites, __}
+import play.api.libs.json.{JsArray, JsObject, Json, OWrites, Reads, __}
+import play.api.mvc.Results.BadRequest
 import utils.ExceptionHandler
 import utils.Utils.Math._
 import utils.Utils.SeqHelper.seqToOpt
 
-import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ContractController @Inject()(mcc: MessagesControllerComponents,
@@ -26,7 +25,8 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
                                    af: AssetsFinder,
                                    env: Environment
                                   )(implicit ec: ExecutionContext)
-    extends ExceptionHandler(mcc) {
+    extends ExceptionHandler(mcc)
+        with ContractControllerHelper {
 
     private def contractNotFound(id: String) =
         ApiError(
@@ -35,13 +35,11 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
         )
 
     private def databaseErrorResponse(errorCause: String, exception: Throwable) =
-        BadRequest(Json.toJson(
-            ApiError(
-                caption = "DATABASE PROBLEM",
-                cause = errorCause,
-                details = Some(exception.getMessage)
-            )
-        ))
+        ApiError.asResult(
+            caption = "DATABASE PROBLEM",
+            cause = errorCause,
+            details = Some(exception.getMessage)
+        )
 
     def contractList: Action[AnyContent] = asyncActionWithExceptionPage {
         import utils.Utils.DateTime._
@@ -75,47 +73,25 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     }
 
     def submitContractNew: Action[AnyContent] = Action.async { implicit request =>
-        // TODO: Вместо _.asOpt сделать просто .as и обернуть в Try, чтобы иметь информацию об ошибке парсинга
-        request.body.asJson.flatMap(_.asOpt[Contract]).map { contract =>
-            val updatedContractOpt =
-                // TODO: Очень костыль-костыль, сделать с этим что-нибудь!
-                if (contract.screenshotPaths.startsWith("https")) {
-                    val urls = contract.screenshotPaths.split(';').toSeq
-                    val newScreenshotPaths = urls.map(ScreenshotHelper.screenshotFromUrlToBase64)
-
-                    seqToOpt(newScreenshotPaths).map(paths => contract.copy(screenshotPaths = paths.mkString(";")))
-                } else {
-                    Some(contract)
-                }
-
-            updatedContractOpt
-                .map(updatedContract =>
-                    contractService
-                        .save(updatedContract)
-                        .map(_ => Ok)
-                        .recover { case e =>
-                            databaseErrorResponse(s"Что-то пошло не так при попытке сохранить сделку ${contract.id}", e)
-                        }
+        readAndParseJsonWithErrorHandling[Contract] { contract =>
+            processScreenshots(contract.screenshotPaths)
+                .map(screenshots => contract.copy(screenshotPaths = screenshots))
+                .fold(
+                    error => ApiError.asAsyncResult(
+                        caption = "SCREENSHOT PARSING PROBLEM",
+                        cause = error
+                    ),
+                    updatedContract =>
+                        contractService
+                            .save(updatedContract)
+                            .map(_ => Ok)
+                            .recover { case e =>
+                                databaseErrorResponse(
+                                    s"Что-то пошло не так при попытке сохранить сделку ${contract.id}", e
+                                )
+                            }
                 )
-                .getOrElse(
-                    // TODO: придумать какую-то обёртку, чтобы каждый раз не писать всё это
-                    Future(BadRequest(Json.toJson(
-                        ApiError(
-                            caption = "SCREENSHOT PARSING PROBLEM",
-                            cause = "Что-то пошло не так при попытке получить скриншот по одному из URL или при " +
-                                    "попытке сконвертировать его в Base64 формат"
-                        )
-                    )))
-                )
-        }.getOrElse(
-            Future(BadRequest(Json.toJson(
-                ApiError(
-                    caption = "JSON PARSING PROBLEM",
-                    cause = s"Что-то пошло не так при попытке распознать JSON сущности Contract на бэкенде",
-                    details = Some("Проблема в теле запроса или в самом JSON")
-                )
-            )))
-        )
+        }
     }
 
     def deleteContractNew(id: String): Action[AnyContent] = Action.async { implicit request =>
@@ -137,6 +113,41 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
             .recover { case e =>
                 databaseErrorResponse("Что-то пошло не так при попытке получить номер для новой сделки", e)
             }
+    }
+
+    def prefillContractNew: Action[AnyContent] = Action.async { implicit request =>
+        readAndParseJsonWithErrorHandling[PrefillContractData] { prefillContractData =>
+            BinaryHelper.getProfitTable.flatMap { profitTableJson =>
+                contractService.getNewNumber.flatMap { contractNumber =>
+                    createPrefilledContract(profitTableJson, prefillContractData, contractNumber)
+                        .fold(
+                            error => ApiError.asAsyncResult(
+                                caption = "PREFILL CONTRACT PROBLEM",
+                                cause = "Что-то пошло не так при попытке создать предзаполеннную сделку",
+                                details = Some(error)
+                            ),
+                            prefilledContract =>
+                                contractService
+                                    .save(prefilledContract)
+                                    .map(_ => Ok(Json.toJson(prefilledContract.id)))
+                                    .recover { case e =>
+                                        databaseErrorResponse(
+                                            s"Что-то пошло не так при попытке сохранить" +
+                                            s"предзаполненную сделку ${prefilledContract.id}", e
+                                        )
+                                    }
+                        )
+                }.recover { case e =>
+                    databaseErrorResponse("Что-то пошло не так при попытке получить номер для новой сделки", e)
+                }
+            }.recover { e =>
+                ApiError.asResult(
+                    caption = "PROFIT TABLE REQUEST PROBLEM",
+                    cause = "Что-то пошло не так при попытке запросить список сделок у брокера",
+                    details = Some(e.getMessage)
+                )
+            }
+        }
     }
 
     def addEditContract(id: Option[String] = None): Action[AnyContent] = asyncActionWithExceptionPage { implicit request =>
@@ -357,4 +368,17 @@ object Ping {
 case class ApiError(caption: String, cause: String, details: Option[String] = None)
 object ApiError extends OptionNullJsonWriter {
     implicit val apiErrorWrites: OWrites[ApiError] = Json.writes
+
+    def asResult(caption: String, cause: String, details: Option[String] = None)
+                (implicit ec: ExecutionContext): Result =
+        BadRequest(Json.toJson(ApiError(caption, cause, details)))
+
+    def asAsyncResult(caption: String, cause: String, details: Option[String] = None)
+                     (implicit ec: ExecutionContext): Future[Result] =
+        Future(BadRequest(Json.toJson(ApiError(caption, cause, details))))
+}
+
+case class PrefillContractData(transactionId: String, screenshotUrls: String)
+object PrefillContractData {
+    implicit val prefillContractDataReads: Reads[PrefillContractData] = Json.reads
 }

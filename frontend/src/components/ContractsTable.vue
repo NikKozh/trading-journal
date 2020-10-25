@@ -94,6 +94,7 @@
     import Contract from "../models/Contract"
     import EventBus from "../utils/EventBus"
     import Routes from "../router/Routes"
+    import goToPage from "../router/goToPage";
 
     @Component
     export default class ContractsTable extends Vue {
@@ -156,11 +157,11 @@
         // HANDLERS START ---------------------------------
 
         handleContractOpen(contract: Contract) {
-            this.$router.push({ path: `${Routes.contractDetails}/${contract.id}/view` })
+            goToPage.contractCard(contract.id)
         }
 
         handleContractEdit(contract: Contract) {
-            this.$router.push({ path: `${Routes.contractDetails}/${contract.id}/edit` })
+            goToPage.contractForm(contract.id)
         }
 
         handleContractDelete(contract: Contract) {

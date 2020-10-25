@@ -48,6 +48,7 @@
     import ContractForm from "../components/ContractForm.vue"
     import ContractView from "../components/ContractView.vue"
     import Routes from "../router/Routes";
+    import goToPage from "../router/goToPage";
 
     @Component({
         components: { ContractForm, ContractView }
@@ -77,7 +78,7 @@
 
         handleContractEdit() {
             if (this.contract) {
-                this.$router.push({path: `${Routes.contractDetails}/${this.contract.id}/edit`})
+                goToPage.contractForm(this.contract.id)
             }
         }
     }
