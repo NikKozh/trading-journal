@@ -17,4 +17,6 @@ libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.4.2"
 
 scalacOptions += "-language:postfixOps"
 
+libraryDependencies += "com.github.andyglow" %% "websocket-scala-client" % "0.3.0"
+
 // unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )

@@ -86,6 +86,7 @@
     import Routes from "../router/Routes"
     import {defaultActionOnError, submitWithRecovery} from "../utils/apiJsonResolver"
     import {Form} from "element-ui"
+    import goToPage from "../router/goToPage"
 
     @Component
     export default class ContractForm extends Vue {
@@ -159,8 +160,7 @@
 
                     submitWithRecovery(
                         ApiRoutes.submitContract,
-                        // TODO: обобщить как-то переход по ссылке с параметрами, чтобы не писать каждый раз руками эту конструкцию
-                        () => this.$router.push({path: `${Routes.contractDetails}/${this.contract.id}/view`}),
+                        () => goToPage.contractCard(this.contract.id),
                         defaultActionOnError(),
                         {
                             method: "POST",
@@ -177,7 +177,7 @@
         }
 
         handleCancel() {
-            this.$router.push({ path: `${Routes.contractDetails}/${this.contract.id}/view` })
+            goToPage.contractCard(this.contract.id)
         }
     }
 </script>

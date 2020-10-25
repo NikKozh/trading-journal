@@ -5,6 +5,7 @@ import {VueConstructor} from "vue"
 import VueRouter from "vue-router"
 import Routes from "./Routes"
 import ContractCard from "../views/ContractCard.vue"
+import ContractPrefillForm from "../components/ContractPrefillForm.vue"
 
 type RouteObject = {
     path: string,
@@ -14,6 +15,7 @@ type RouteObject = {
 const routes: RouteObject[] = [
     { path: Routes.index, component: Index },
     { path: Routes.createContract, component: CreateContract },
+    { path: Routes.prefillContract, component: ContractPrefillForm },
     { path: `${Routes.contractDetails}/:id/:mode`, component: ContractCard },
     { path: Routes.stats, component: Stats },
     // TODO: { path: '*', component: NotFoundComponent }

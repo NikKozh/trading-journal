@@ -9,6 +9,7 @@ export default {
     contractList: withApiPath("/contractList"),
     contractCard: (id: string) => withApiPath(`/contractDetails/${id}`),
     submitContract: withApiPath("/submitContract"),
+    prefillContract: withApiPath("/prefillContract"),
     deleteContract: (id: string) => withApiPath(`/deleteContract/${id}`),
     newContractData: withApiPath("/newContractData")
 }

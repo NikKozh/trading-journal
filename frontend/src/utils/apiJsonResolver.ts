@@ -15,7 +15,9 @@ import {genIoType} from "@orchestrator/gen-io-ts"
 import {eqString} from "fp-ts/es6/Eq"
 import {ordString} from "fp-ts/es6/Ord"
 import DetailedError from "../models/DetailedError"
-import EventBus from "./EventBus";
+import EventBus from "./EventBus"
+
+// TODO: файл раздувается. Раскидать на модули поменьше (для моделей; простые запросы; запросы, не требующие ответа)
 
 // TODO: Подумать про вывод тела ответа запроса - насколько нужно и как сделать
 //  (там сейчас проблема, что тело достаётся через промис, который заблокирован другим потоком)
@@ -364,6 +366,15 @@ export function resolvePossibleErrorModel(onSuccess: () => void, onFailure: (err
     }
 }
 
+export function resolveSimpleResponse<T>(onSuccess: (response: T) => void, onFailure: (error: DetailedError) => void) {
+    return function (responseTE: TaskEither<DetailedError, any>) {
+        TE.fold(
+            (err: DetailedError) => T.of(onFailure(err)),
+            (response: T) => T.of(onSuccess(response))
+        )(responseTE)()
+    }
+}
+
 export function defaultActionOnError(additionalAction?: (err: DetailedError) => void) {
     return function(error: DetailedError): void {
         console.log("ERROR: ", error)
@@ -408,5 +419,16 @@ export function submitWithRecovery(url: string,
         getResponse(fetchProps),
         getPossibleErrorModel,
         resolvePossibleErrorModel(onSuccess, onFailure)
+    )
+}
+
+export function simpleRequest<T>(url: string,
+                                 onSuccess: (response: T) => void,
+                                 onFailure: (err: DetailedError) => void = defaultActionOnError(),
+                                 fetchProps?: RequestInit): void {
+    pipe(url,
+        getResponse(fetchProps),
+        getJsonObject,
+        resolveSimpleResponse(onSuccess, onFailure)
     )
 }
