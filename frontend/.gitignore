@@ -1,0 +1,7 @@
+/node_modules
+/.cache/
+/.npm/
+*.js
+*.d.ts
+!src/shims.d.ts
+!src/components/ErrorAlert.vue.d.ts
