@@ -1,0 +1,14 @@
+{
+  "entrypoint": "index.html",
+  "shell": "src/tj-frontend-app/tj-frontend-app.js",
+  "npm": true,
+  "lint": {
+    "rules": [
+      "polymer-3"
+    ]
+  },
+  "extraDependencies": [
+    "manifest.json",
+    "node_modules/@webcomponents/webcomponentsjs/**"
+  ]
+}
