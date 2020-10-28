@@ -1,3 +1,3 @@
 export default {
-    appUrl: "http://localhost:9001/api"
+    appUrl: "https://bo-trading-journal.herokuapp.com/api"
 }
