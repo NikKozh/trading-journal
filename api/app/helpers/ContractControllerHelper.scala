@@ -133,7 +133,7 @@ trait ContractControllerHelper {
 
                 Contract(
                     number = newContractNumber,
-                    created = new Timestamp(data.time),
+                    created = new Timestamp(data.time * 1000),
                     expiration = expiration,
                     fxSymbol = symbol,
                     direction = direction,
