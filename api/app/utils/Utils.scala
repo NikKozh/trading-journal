@@ -1,9 +1,5 @@
 package utils
 
-import java.sql.Timestamp
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 object Utils {
     object Math {
         implicit class DoubleWithRounding(x: Double) {
@@ -18,6 +14,10 @@ object Utils {
     }
 
     object DateTime {
+        import java.sql.Timestamp
+        import java.time.LocalDate
+        import java.time.format.DateTimeFormatter
+
         implicit def timestampOrdering: Ordering[Timestamp] = (x: Timestamp, y: Timestamp) => x compareTo y
         implicit def localDateOrdering: Ordering[LocalDate] = (x: LocalDate, y: LocalDate) => x compareTo y
 
@@ -45,5 +45,13 @@ object Utils {
                         v <- opt
                     } yield seq :+ v
             }
+    }
+
+    // TODO: тот же вопрос про пакет хелперов, пока запихну сюда
+    object Base64Helper {
+        import java.util.Base64
+        import scala.util.Try
+
+        def isStringContainsValidBase64(str: String): Boolean = Try(Base64.getDecoder.decode(str)).isSuccess
     }
 }
