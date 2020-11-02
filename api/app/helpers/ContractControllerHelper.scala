@@ -7,6 +7,7 @@ import play.api.libs.json.{JsArray, JsObject, JsValue, Reads}
 import play.api.mvc.{AnyContent, MessagesRequest, Result}
 import utils.Utils.Math._
 import utils.Utils.SeqHelper.seqToOpt
+import utils.Utils.Base64Helper
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.reflect._
@@ -41,7 +42,7 @@ trait ContractControllerHelper {
         if (screenshotsUrls.isEmpty) {
             Right("")
         } else {
-            // TODO: Проверка очень костыль-костыль, сделать с этим что-нибудь!
+            // TODO: Уже менее костыльно, но всё равно стоит подумать, как всё это улучшить
             if (screenshotsUrls.startsWith("https")) {
                 val urls = screenshotsUrls.split(';').toSeq
                 val newScreenshotPaths = urls.map(ScreenshotHelper.screenshotFromUrlToBase64)
@@ -49,12 +50,13 @@ trait ContractControllerHelper {
                 seqToOpt(newScreenshotPaths)
                     .map(paths => Right(paths.mkString(";")))
                     .getOrElse(Left("Что-то пошло не так при попытке получить скриншот по одному из URL или при " +
-                        "попытке сконвертировать его в Base64 формат"))
+                                    "попытке сконвертировать его в Base64 формат"))
+            } else if (screenshotsUrls.split(';').toSeq.forall(Base64Helper.isStringContainsValidBase64)) {
+                Right(screenshotsUrls)
             } else {
-                Left(s"Строка со скриншотами некорректна (не начинается с https): $screenshotsUrls")
+                Left(s"Строка со скриншотами некорректна (не начинается с https и не является Base64): $screenshotsUrls")
             }
         }
-
 
     private def getDirection(data: ContractTransactionData) = {
         val direction = data.shortCode.split('_')(0)
