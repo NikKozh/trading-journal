@@ -3,9 +3,9 @@ package controllers
 import java.sql.Timestamp
 import java.time.{Instant, LocalDateTime, Month, ZoneId, ZoneOffset}
 import java.util.UUID
-
 import helpers.ContractHelper._
 import helpers.{BinaryHelper, ContractControllerHelper, ContractHelper, OptionNullJsonWriter, ScreenshotHelper}
+
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
@@ -16,8 +16,9 @@ import play.api.mvc.Results.BadRequest
 import utils.ExceptionHandler
 import utils.Utils.Math._
 import utils.Utils.SeqHelper.seqToOpt
-
+import utils.Utils.DateTime._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.math.Ordered.orderingToOrdered
 
 @Singleton
 class ContractController @Inject()(mcc: MessagesControllerComponents,
@@ -52,6 +53,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     def contractListNew: Action[AnyContent] = Action.async {
         contractService
             .list
+            .map(_.filter(_.created > Timestamp.valueOf("2020-12-01 00:00:00.0")))
             .map(Json.toJson[Seq[Contract]])
             .map(Ok(_))
             // TODO: обобщить блок с .recover
