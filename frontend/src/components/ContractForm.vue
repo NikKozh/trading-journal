@@ -12,8 +12,8 @@
                 <el-select v-model="contract.contractType" placeholder="Тип счёта">
                     <!-- TODO: server-side options -->
                     <el-option label="Демо" value="Демо"></el-option>
-                    <el-option label="Реал" value="Реал"></el-option>
-                    <el-option label="Форкаст" value="Форкаст"></el-option>
+                    <el-option label="Реальный" value="Реальный"></el-option>
+<!--                    <el-option label="Форкаст" value="Форкаст"></el-option>-->
                 </el-select>
             </el-form-item>
             <el-form-item label="Актив" prop="fxSymbol">
@@ -21,13 +21,6 @@
                 <el-select v-model="contract.fxSymbol" placeholder="Актив">
                     <el-option label="EUR/USD" value="EUR/USD"></el-option>
                     <el-option label="USD/JPY" value="USD/JPY"></el-option>
-                </el-select>
-            </el-form-item>
-            <el-form-item label="Прогноз" prop="direction">
-                <!-- TODO: server-side options -->
-                <el-select v-model="contract.direction" placeholder="Прогноз">
-                    <el-option label="CALL" value="CALL"></el-option>
-                    <el-option label="PUT" value="PUT"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="Экспирация, мин." prop="expiration">
@@ -47,15 +40,22 @@
                                  :min="1"
                 ></el-input-number> <!-- TODO: маска -->
             </el-form-item>
-            <el-form-item label="В плюс?" label-width="100px">
+            <el-form-item label="Удачно?" label-width="100px">
                 <el-checkbox v-model="contract.isWin"></el-checkbox> <!-- TODO: радиобатоны вместо чекбокса? -->
             </el-form-item>
-            <el-form-item label="Стратегия" label-width="100px">
+            <el-form-item label="Прогноз" prop="direction">
+                <!-- TODO: server-side options -->
+                <el-select v-model="contract.direction" placeholder="Прогноз">
+                    <el-option label="CALL" value="CALL"></el-option>
+                    <el-option label="PUT" value="PUT"></el-option>
+                </el-select>
+            </el-form-item>
+<!--            <el-form-item label="Стратегия" label-width="100px">
                 <el-input></el-input>
-            </el-form-item>
-            <el-form-item label="Вход по ТС?" label-width="100px">
-                <el-checkbox v-model="contract.isCorrect"></el-checkbox> <!-- TODO: здесь вроде норм оставить чекбокс? -->
-            </el-form-item>
+            </el-form-item>-->
+<!--            <el-form-item label="Вход по ТС?" label-width="100px">
+                <el-checkbox v-model="contract.isCorrect"></el-checkbox> &lt;!&ndash; TODO: здесь вроде норм оставить чекбокс? &ndash;&gt;
+            </el-form-item>-->
         </el-col>
         <el-col>
             <el-form-item v-if="isContractNew()" label="Скриншоты">
