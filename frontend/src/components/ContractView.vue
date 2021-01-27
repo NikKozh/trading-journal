@@ -17,7 +17,7 @@
         <el-divider class="contract-info-divider"></el-divider>
 
         <ContractInfoBox label="Тэги">{{ contract.tags }}</ContractInfoBox>
-        <ContractInfoBox label="Вход по ТС?">{{ contract.isCorrectF() }}</ContractInfoBox>
+<!--        <ContractInfoBox label="Вход по ТС?">{{ contract.isCorrectF() }}</ContractInfoBox>-->
 
         <el-divider class="contract-info-divider"></el-divider>
 
