@@ -36,9 +36,9 @@
                              width="90"
             ></el-table-column>
             <el-table-column prop="profitPercent"
-                             label="%"
+                             label="Прибыль, %"
                              :formatter="profitPercentColFormatter"
-                             width="80"
+                             width="120"
             ></el-table-column>
             <el-table-column prop="isWin"
                              label="Результат"
@@ -51,11 +51,11 @@
                              width="80"
             ></el-table-column>
             <el-table-column prop="tags" label="Тэги" min-width="200"></el-table-column>
-            <el-table-column prop="isCorrect"
+<!--            <el-table-column prop="isCorrect"
                              label="По ТС?"
                              :formatter="isCorrectColFormatter"
                              width="70"
-            ></el-table-column>
+            ></el-table-column>-->
             <el-table-column prop="actions" label="Действия" width="180">
                 <template slot-scope="scope">
                     <el-tooltip effect="dark" content="Информация о сделке" placement="top">

@@ -7,6 +7,7 @@
 @import models.stats.GeneralStatsMonthlyItem
 @import java.time.format.TextStyle
 @import java.util.Locale
+@import scala.util.Try
 
 @(dailyItems: Seq[GeneralStatsDailyItem],
     weeklyItems: Seq[GeneralStatsWeeklyItem],
@@ -54,7 +55,9 @@
     <br>
     Сделки -: @dailyItems.map(_.loosedContracts).sum
     <br>
-    % успешных: @{(dailyItems.map(_.winningContracts).sum * 100 / dailyItems.map(_.contractsCount).sum).round2}%
+    % успешных: @{
+        Try((dailyItems.map(_.winningContracts).sum * 100 / dailyItems.map(_.contractsCount).sum).round2).getOrElse(0)
+    }%
 
     <br>
     <br>
