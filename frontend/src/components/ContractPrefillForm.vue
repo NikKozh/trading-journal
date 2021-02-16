@@ -30,7 +30,17 @@
 
     @Component
     export default class ContractInfoBox extends Vue {
-        form = { prefillData: "" }
+        form = { prefillData: `
+В качестве тестовых данных можно использовать:
+
+1 вариант:
+51984715861
+https://i.ibb.co/mtd5B4N/Contract.png
+
+2 вариант:
+51982957741
+https://i.ibb.co/mtd5B4N/Contract.png
+        ` }
 
         rules = {
             prefillData: [
