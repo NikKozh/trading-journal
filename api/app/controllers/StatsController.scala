@@ -21,6 +21,8 @@ import utils.Utils.StringHelper
 import java.sql.Timestamp
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import utils.Utils.DateTime._
+import scala.math.Ordered.orderingToOrdered
 
 @Singleton
 class StatsController @Inject()(mcc: MessagesControllerComponents,
@@ -41,6 +43,7 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
     def allTimeStats(): Action[AnyContent] = Action.async {
         contractService
             .list
+            .map(_.filter(_.created > Timestamp.valueOf("2020-11-05 00:00:00.0")))
             .map(allContracts =>
                 AllTimeStats(
                     income = allContracts.flatMap(_.income).sum,
@@ -58,7 +61,7 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
     private def dailyStatsItems =
         contractService
             .list
-            //            .map(_.filter(_.created > Timestamp.valueOf("2020-11-05 00:00:00.0")))
+            .map(_.filter(_.created > Timestamp.valueOf("2020-11-05 00:00:00.0")))
             .map(_
                 .map(c => (c.created.toLocalDateTime.toLocalDate, c))
                 .groupBy(_._1)
