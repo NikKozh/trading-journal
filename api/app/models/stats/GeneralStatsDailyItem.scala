@@ -1,7 +1,6 @@
 package models.stats
 
 import java.time.LocalDate
-
 import utils.Utils.Math._
 
 case class GeneralStatsDailyItem(day: LocalDate,

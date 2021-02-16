@@ -53,7 +53,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents,
     def contractListNew: Action[AnyContent] = Action.async {
         contractService
             .list
-            .map(_.filter(_.created > Timestamp.valueOf("2020-11-05 00:00:00.0")))
+//            .map(_.filter(_.created > Timestamp.valueOf("2020-11-05 00:00:00.0")))
             .map(Json.toJson[Seq[Contract]])
             .map(Ok(_))
             // TODO: обобщить блок с .recover
