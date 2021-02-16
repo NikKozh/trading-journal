@@ -11,5 +11,10 @@ export default {
     submitContract: withApiPath("/submitContract"),
     prefillContract: withApiPath("/prefillContract"),
     deleteContract: (id: string) => withApiPath(`/deleteContract/${id}`),
-    newContractData: withApiPath("/newContractData")
+    newContractData: withApiPath("/newContractData"),
+
+    allTimeStats: withApiPath("/stats/allTime"),
+    dailyStats: withApiPath("/stats/daily"),
+    weeklyStats: withApiPath("/stats/weekly"),
+    yearlyStats: withApiPath("/stats/yearly")
 }
