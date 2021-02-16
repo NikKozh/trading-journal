@@ -35,3 +35,8 @@ POST    /api/prefillContract        controllers.ContractController.prefillContra
 GET     /api/deleteContract/:id     controllers.ContractController.deleteContractNew(id: String)
 
 GET     /api/newContractData        controllers.ContractController.newContractData
+
+GET     /api/stats/allTime          controllers.StatsController.allTimeStats()
+GET     /api/stats/daily            controllers.StatsController.dailyStats()
+GET     /api/stats/weekly           controllers.StatsController.weeklyStats()
+GET     /api/stats/yearly           controllers.StatsController.yearlyStats()
