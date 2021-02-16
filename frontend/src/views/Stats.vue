@@ -12,9 +12,13 @@
             <el-divider></el-divider>
             <el-col :span="8" style="padding-right: 5px;">
                 <h1>По дням</h1>
-                <el-table class="stats-table" :data="dailyItems" :row-class-name="tableRowClass" border>
-                    <el-table-column prop="day"
-                                     label="Дата">
+                <el-table class="stats-table"
+                          :data="dailyItems"
+                          :row-class-name="tableRowClass"
+                          :empty-text="dailyLoadingText"
+                          border
+                >
+                    <el-table-column prop="day" label="Дата">
                         <template slot-scope="scope">
                             <i class="el-icon-time"/>
                             <span>
@@ -41,7 +45,12 @@
             </el-col>
             <el-col :span="8" style="padding: 0 5px;">
                 <h1>По неделям</h1>
-                <el-table class="stats-table" :data="weeklyItems" :row-class-name="weeklyTableRowClass" border>
+                <el-table class="stats-table"
+                          :data="weeklyItems"
+                          :row-class-name="weeklyTableRowClass"
+                          :empty-text="weeklyLoadingText"
+                          border
+                >
                     <el-table-column prop="dayRange"
                                      label="Диапазон дней"
                                      width="115"
@@ -73,7 +82,12 @@
             </el-col>
             <el-col :span="8" style="padding-left: 5px">
                 <h1>По месяцам</h1>
-                <el-table class="stats-table" :data="yearlyItems" :row-class-name="yearlyTableRowClass" border>
+                <el-table class="stats-table"
+                          :data="yearlyItems"
+                          :row-class-name="yearlyTableRowClass"
+                          :empty-text="yearlyLoadingText"
+                          border
+                >
                     <el-table-column prop="monthYear"
                                      label="Месяц и год">
                         <template slot-scope="scope">
@@ -129,34 +143,7 @@
         yearlyLoadingText: string = "Данные загружаются..."
 
         created() {
-            fetchAndResolve(
-                ApiRoutes.allTimeStats,
-                AllTimeStats,
-                (allTimeStats: AllTimeStats) => {
-                    console.log("DONE: ", allTimeStats)
-                    this.allTimeStats = allTimeStats
-                },
-                defaultActionOnError()
-            )
-            fetchAndResolveArray(
-                ApiRoutes.dailyStats,
-                DailyStatsItem,
-                (dailyItems: DailyStatsItem[]) => {
-                    console.log("DONE: ", dailyItems)
-                    this.dailyItems = dailyItems
-                },
-                defaultActionOnError(_ => this.dailyLoadingText = "Произошла ошибка при загрузке данных!")
-            )
-            fetchAndResolveArray(
-                ApiRoutes.weeklyStats,
-                WeeklyStatsItem,
-                (weeklyItems: WeeklyStatsItem[]) => {
-                    console.log("DONE: ", weeklyItems)
-                    this.weeklyItems = weeklyItems
-                },
-                defaultActionOnError(_ => this.weeklyLoadingText = "Произошла ошибка при загрузке данных!")
-            )
-            fetchAndResolveArray(
+            const fetchYearly = () => fetchAndResolveArray(
                 ApiRoutes.yearlyStats,
                 YearlyStatsItem,
                 (yearlyItems: YearlyStatsItem[]) => {
@@ -164,6 +151,36 @@
                     this.yearlyItems = yearlyItems
                 },
                 defaultActionOnError(_ => this.yearlyLoadingText = "Произошла ошибка при загрузке данных!")
+            )
+            const fetchWeekly = () => fetchAndResolveArray(
+                ApiRoutes.weeklyStats,
+                WeeklyStatsItem,
+                (weeklyItems: WeeklyStatsItem[]) => {
+                    console.log("DONE: ", weeklyItems)
+                    this.weeklyItems = weeklyItems
+                    fetchYearly()
+                },
+                defaultActionOnError(_ => this.weeklyLoadingText = "Произошла ошибка при загрузке данных!")
+            )
+            const fetchDaily = () => fetchAndResolveArray(
+                ApiRoutes.dailyStats,
+                DailyStatsItem,
+                (dailyItems: DailyStatsItem[]) => {
+                    console.log("DONE: ", dailyItems)
+                    this.dailyItems = dailyItems
+                    fetchWeekly()
+                },
+                defaultActionOnError(_ => this.dailyLoadingText = "Произошла ошибка при загрузке данных!")
+            )
+            fetchAndResolve(
+                ApiRoutes.allTimeStats,
+                AllTimeStats,
+                (allTimeStats: AllTimeStats) => {
+                    console.log("DONE: ", allTimeStats)
+                    this.allTimeStats = allTimeStats
+                    fetchDaily()
+                },
+                defaultActionOnError()
             )
         }
 
