@@ -89,7 +89,9 @@
                           border
                 >
                     <el-table-column prop="monthYear"
-                                     label="Месяц и год">
+                                     label="Месяц и год"
+                                     width="125"
+                    >
                         <template slot-scope="scope">
                             <i class="el-icon-time"/>
                             <span class="capitalize">
@@ -258,5 +260,8 @@
     }
     .el-table .fail-row {
         background: rgb(254, 240, 240);
+    }
+    .el-table .cell {
+        word-break: break-word;
     }
 </style>
