@@ -20,7 +20,6 @@
                 >
                     <el-table-column prop="day" label="Дата">
                         <template slot-scope="scope">
-                            <i class="el-icon-time"/>
                             <span>
                                 {{ dayColFormatter(scope.row) }}
                             </span>
@@ -56,7 +55,6 @@
                                      width="115"
                     >
                         <template slot-scope="scope">
-                            <i class="el-icon-time"/>
                             <span>
                                 {{ weeklyDaysColFormatter(scope.row) }}
                             </span>
@@ -88,10 +86,8 @@
                           :empty-text="yearlyLoadingText"
                           border
                 >
-                    <el-table-column prop="monthYear"
-                                     label="Месяц и год">
+                    <el-table-column prop="monthYear" label="Месяц и год">
                         <template slot-scope="scope">
-                            <i class="el-icon-time"/>
                             <span class="capitalize">
                                 {{ yearlyDaysColFormatter(scope.row) }}
                             </span>
@@ -258,5 +254,8 @@
     }
     .el-table .fail-row {
         background: rgb(254, 240, 240);
+    }
+    .el-table .cell {
+        word-break: break-word;
     }
 </style>
