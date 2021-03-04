@@ -3,11 +3,12 @@ package helpers
 import java.util.concurrent.Semaphore
 import com.github.andyglow.websocket._
 import com.github.andyglow.websocket.util.Uri
+import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object BinaryHelper {
-    def getProfitTable(implicit ec: ExecutionContext): Future[JsValue] = {
+    def getProfitTable(implicit ec: ExecutionContext, config: Configuration): Future[JsValue] = {
         val profitTablePromise = Promise[String]()
         val semaphore = new Semaphore(0)
 
@@ -30,16 +31,22 @@ object BinaryHelper {
             }
         }
 
-        // TODO: небезопасно, надо app_id перенести в конфиг
-        val cli = WebsocketClient(Uri("wss://ws.binaryws.com/websockets/v3?app_id=***REMOVED***"), protocolHandler)
-        val ws = cli.open()
+        def connectToBinaryAndGetData(uri: String, token: String) = {
+            val cli = WebsocketClient(Uri(uri), protocolHandler)
+            val ws = cli.open()
 
-        // TODO: небезопасно x2, надо токен перенести в конфиг
-        ws ! """{ "authorize": "***REMOVED***" }"""
+            ws ! s"""{ "authorize": "$token" }"""
 
-        semaphore.acquire(1)
-        cli.shutdownSync()
+            semaphore.acquire(1)
+            cli.shutdownSync()
 
-        profitTablePromise.future.map(Json.parse)
+            profitTablePromise.future.map(Json.parse)
+        }
+
+        for {
+            uri <- ConfigHelper.getConfigValue[String]("binaryConnection.uri")
+            token <- ConfigHelper.getConfigValue[String]("binaryConnection.token")
+            profitTable <- connectToBinaryAndGetData(uri, token)
+        } yield profitTable
     }
 }
