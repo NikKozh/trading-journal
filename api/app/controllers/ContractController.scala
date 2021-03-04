@@ -1,30 +1,25 @@
 package controllers
 
 import java.sql.Timestamp
-import java.time.{Instant, LocalDateTime, Month, ZoneId, ZoneOffset}
+import java.time.Instant
 import java.util.UUID
-
 import helpers.ContractHelper._
 import helpers.{BinaryHelper, ContractControllerHelper, ContractHelper, OptionNullJsonWriter, ScreenshotHelper}
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
 import models.{Contract, ContractData, ContractDraftData, ContractDraftRawData}
-import play.api.Environment
+import play.api.Configuration
 import play.api.libs.json.{JsArray, JsObject, Json, OWrites, Reads, __}
 import play.api.mvc.Results.BadRequest
 import utils.ExceptionHandler
 import utils.Utils.Math._
-import utils.Utils.SeqHelper.seqToOpt
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ContractController @Inject()(mcc: MessagesControllerComponents,
-                                   contractService: ContractService,
-                                   af: AssetsFinder,
-                                   env: Environment
-                                  )(implicit ec: ExecutionContext)
+class ContractController @Inject()(mcc: MessagesControllerComponents, contractService: ContractService)
+                                  (implicit ec: ExecutionContext, config: Configuration)
     extends ExceptionHandler(mcc)
         with ContractControllerHelper {
 
