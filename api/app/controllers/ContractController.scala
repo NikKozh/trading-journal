@@ -5,6 +5,7 @@ import java.time.Instant
 import java.util.UUID
 import helpers.ContractHelper._
 import helpers.{BinaryHelper, ContractControllerHelper, ContractHelper, OptionNullJsonWriter, ScreenshotHelper}
+
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
@@ -12,7 +13,7 @@ import models.{Contract, ContractData, ContractDraftData, ContractDraftRawData}
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsObject, Json, OWrites, Reads, __}
 import play.api.mvc.Results.BadRequest
-import utils.ExceptionHandler
+import utils.{ErrorHandler, ExceptionHandler}
 import utils.Utils.Math._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,20 +22,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ContractController @Inject()(mcc: MessagesControllerComponents, contractService: ContractService)
                                   (implicit ec: ExecutionContext, config: Configuration)
     extends ExceptionHandler(mcc)
-        with ContractControllerHelper {
-
-    private def contractNotFound(id: String) =
-        ApiError(
-            caption = "CONTRACT NOT FOUND",
-            cause = s"Сделка с id $id отсутствует в базе данных"
-        )
-
-    private def databaseErrorResponse(errorCause: String, exception: Throwable) =
-        ApiError.asResult(
-            caption = "DATABASE PROBLEM",
-            cause = errorCause,
-            details = Some(exception.getMessage)
-        )
+        with ContractControllerHelper
+        with ErrorHandler {
 
     def contractList: Action[AnyContent] = asyncActionWithExceptionPage {
         import utils.Utils.DateTime._

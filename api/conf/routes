@@ -39,4 +39,4 @@ GET     /api/newContractData        controllers.ContractController.newContractDa
 GET     /api/stats/allTime          controllers.StatsController.allTimeStats()
 GET     /api/stats/daily            controllers.StatsController.dailyStats()
 GET     /api/stats/weekly           controllers.StatsController.weeklyStats()
-GET     /api/stats/yearly           controllers.StatsController.yearlyStats()
+GET     /api/stats/monthly          controllers.StatsController.monthlyStats()

@@ -81,33 +81,33 @@
             <el-col :span="8" style="padding-left: 5px">
                 <h1>По месяцам</h1>
                 <el-table class="stats-table"
-                          :data="yearlyItems"
-                          :row-class-name="yearlyTableRowClass"
-                          :empty-text="yearlyLoadingText"
+                          :data="monthlyItems"
+                          :row-class-name="monthlyTableRowClass"
+                          :empty-text="monthlyLoadingText"
                           border
                 >
                     <el-table-column prop="monthYear" label="Месяц и год">
                         <template slot-scope="scope">
                             <span class="capitalize">
-                                {{ yearlyDaysColFormatter(scope.row) }}
+                                {{ monthlyDaysColFormatter(scope.row) }}
                             </span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="income"
                                      label="Сумма за месяц"
-                                     :formatter="yearlyIncomeFormatter"
+                                     :formatter="monthlyIncomeFormatter"
                     ></el-table-column>
                     <el-table-column prop="contractsCount" label="Всего сделок" width="105"></el-table-column>
                     <el-table-column prop="winningContracts" label="Сделки +" width="80"></el-table-column>
                     <el-table-column prop="loosedContracts"
                                      label="Сделки -"
                                      width="80"
-                                     :formatter="yearlyLoosedContractsFormatter"
+                                     :formatter="monthlyLoosedContractsFormatter"
                     ></el-table-column>
                     <el-table-column prop="winRatePercent"
                                      label="% успешных"
                                      width="105"
-                                     :formatter="yearlyWinRateFormatter"
+                                     :formatter="monthlyWinRateFormatter"
                     ></el-table-column>
                 </el-table>
             </el-col>
@@ -122,7 +122,7 @@
     import {defaultActionOnError, fetchAndResolve, fetchAndResolveArray} from "../utils/apiJsonResolver";
     import ApiRoutes from "../router/ApiRoutes";
     import WeeklyStatsItem from "../models/WeeklyStatsItem";
-    import YearlyStatsItem from "../models/YearlyStatsItem";
+    import MonthlyStatsItem from "../models/MonthlyStatsItem";
     import AllTimeStats from "../models/AllTimeStats";
     import Contract from "../models/Contract";
 
@@ -132,21 +132,21 @@
 
         dailyItems: DailyStatsItem[] = []
         weeklyItems: WeeklyStatsItem[] = []
-        yearlyItems: WeeklyStatsItem[] = []
+        monthlyItems: MonthlyStatsItem[] = []
 
         dailyLoadingText: string = "Данные загружаются..."
         weeklyLoadingText: string = "Данные загружаются..."
-        yearlyLoadingText: string = "Данные загружаются..."
+        monthlyLoadingText: string = "Данные загружаются..."
 
         created() {
-            const fetchYearly = () => fetchAndResolveArray(
-                ApiRoutes.yearlyStats,
-                YearlyStatsItem,
-                (yearlyItems: YearlyStatsItem[]) => {
-                    console.log("DONE: ", yearlyItems)
-                    this.yearlyItems = yearlyItems
+            const fetchMonthly = () => fetchAndResolveArray(
+                ApiRoutes.monthlyStats,
+                MonthlyStatsItem,
+                (monthlyItems: MonthlyStatsItem[]) => {
+                    console.log("DONE: ", monthlyItems)
+                    this.monthlyItems = monthlyItems
                 },
-                defaultActionOnError(_ => this.yearlyLoadingText = "Произошла ошибка при загрузке данных!")
+                defaultActionOnError(_ => this.monthlyLoadingText = "Произошла ошибка при загрузке данных!")
             )
             const fetchWeekly = () => fetchAndResolveArray(
                 ApiRoutes.weeklyStats,
@@ -154,7 +154,7 @@
                 (weeklyItems: WeeklyStatsItem[]) => {
                     console.log("DONE: ", weeklyItems)
                     this.weeklyItems = weeklyItems
-                    fetchYearly()
+                    fetchMonthly()
                 },
                 defaultActionOnError(_ => this.weeklyLoadingText = "Произошла ошибка при загрузке данных!")
             )
@@ -223,23 +223,23 @@
         }
 
 
-        yearlyDaysColFormatter(row: YearlyStatsItem): string {
+        monthlyDaysColFormatter(row: MonthlyStatsItem): string {
             return row.firstMonthDayF("LLLL yyyy")
         }
 
-        yearlyIncomeFormatter(row: DailyStatsItem): string {
+        monthlyIncomeFormatter(row: DailyStatsItem): string {
             return row.incomeF()
         }
 
-        yearlyLoosedContractsFormatter(row: YearlyStatsItem): string {
+        monthlyLoosedContractsFormatter(row: MonthlyStatsItem): string {
             return row.loosedContractsF()
         }
 
-        yearlyWinRateFormatter(row: YearlyStatsItem): string {
+        monthlyWinRateFormatter(row: MonthlyStatsItem): string {
             return row.winRatePercentF()
         }
 
-        yearlyTableRowClass({row}: {row: YearlyStatsItem, rowIndex: number}): string {
+        monthlyTableRowClass({row}: {row: MonthlyStatsItem, rowIndex: number}): string {
             return row.income >= 0 ? "success-row" : "fail-row"
         }
     }

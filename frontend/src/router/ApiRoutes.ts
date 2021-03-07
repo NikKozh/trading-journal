@@ -16,5 +16,5 @@ export default {
     allTimeStats: withApiPath("/stats/allTime"),
     dailyStats: withApiPath("/stats/daily"),
     weeklyStats: withApiPath("/stats/weekly"),
-    yearlyStats: withApiPath("/stats/yearly")
+    monthlyStats: withApiPath("/stats/monthly")
 }

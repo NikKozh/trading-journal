@@ -33,13 +33,13 @@ object StatsItems {
         implicit val weeklyStatsItemReads: Reads[WeeklyStatsItem] = Json.reads
     }
 
-    case class YearlyStatsItem(firstMonthDay: Long, // Храним первое число месяца, чтобы знать год
-                               income: Double,
-                               contractsCount: Int,
-                               winningContracts: Int)
+    case class MonthlyStatsItem(firstMonthDay: Long, // Храним первое число месяца, чтобы знать год
+                                income: Double,
+                                contractsCount: Int,
+                                winningContracts: Int)
 
-    object YearlyStatsItem {
-        implicit val yearlyStatsItemWrites: OWrites[YearlyStatsItem] = Json.writes
-        implicit val yearlyStatsItemReads: Reads[YearlyStatsItem] = Json.reads
+    object MonthlyStatsItem {
+        implicit val yearlyStatsItemWrites: OWrites[MonthlyStatsItem] = Json.writes
+        implicit val yearlyStatsItemReads: Reads[MonthlyStatsItem] = Json.reads
     }
 }

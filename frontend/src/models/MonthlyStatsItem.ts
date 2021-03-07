@@ -1,7 +1,7 @@
 import {Property as CodecProperty} from "@orchestrator/gen-io-ts";
 import {formatDate, formatMoney} from "../utils/Formatters";
 
-export default class YearlyStatsItem {
+export default class MonthlyStatsItem {
     @CodecProperty({ isRequired: true, type: Number })
     firstMonthDay: number
 
