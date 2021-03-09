@@ -42,4 +42,14 @@ object StatsItems {
         implicit val yearlyStatsItemWrites: OWrites[MonthlyStatsItem] = Json.writes
         implicit val yearlyStatsItemReads: Reads[MonthlyStatsItem] = Json.reads
     }
+
+    case class AllStats(allTime: AllTimeStats,
+                        daily: Seq[DailyStatsItem],
+                        weekly: Seq[WeeklyStatsItem],
+                        monthly: Seq[MonthlyStatsItem])
+
+    object AllStats {
+        implicit val allStatsItemWrites: OWrites[AllStats] = Json.writes
+        implicit val allStatsItemReads: Reads[AllStats] = Json.reads
+    }
 }

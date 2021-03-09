@@ -3,42 +3,36 @@
         <el-row>
             <h1>За всё время</h1>
                 <template v-if="!!allTimeStats">
-                    <p>Сумма: {{ allTimeStats.incomeF() }}</p>
+                    <p>Сумма: {{ getIncome(allTimeStats) }}</p>
                     <p>Всего сделок: {{ allTimeStats.contractsCount }}</p>
                     <p>Сделки +: {{ allTimeStats.winningContracts }}</p>
-                    <p>Сделки -: {{ allTimeStats.loosedContracts() }}</p>
-                    <p>% успешных: {{ allTimeStats.winRatePercentF() }}</p>
+                    <p>Сделки -: {{ getLoosedContracts(allTimeStats) }}</p>
+                    <p>% успешных: {{ getWinratePercent(allTimeStats) }}</p>
                 </template>
             <el-divider></el-divider>
             <el-col :span="8" style="padding-right: 5px;">
                 <h1>По дням</h1>
                 <el-table class="stats-table"
                           :data="dailyItems"
-                          :row-class-name="tableRowClass"
+                          :row-class-name="getTableRowClass"
                           :empty-text="dailyLoadingText"
                           border
                 >
-                    <el-table-column prop="day" label="Дата">
-                        <template slot-scope="scope">
-                            <span>
-                                {{ dayColFormatter(scope.row) }}
-                            </span>
-                        </template>
-                    </el-table-column>
+                    <el-table-column prop="day" label="Дата" :formatter="getDailyDate"></el-table-column>
                     <el-table-column prop="income"
                                      label="Сумма за день"
-                                     :formatter="incomeFormatter"
+                                     :formatter="getIncome"
                     ></el-table-column>
                     <el-table-column prop="contractsCount" label="Всего сделок"></el-table-column>
                     <el-table-column prop="winningContracts" label="Сделки +" width="80"></el-table-column>
                     <el-table-column prop="loosedContracts"
                                      label="Сделки -"
                                      width="80"
-                                     :formatter="loosedContractsFormatter"
+                                     :formatter="getLoosedContracts"
                     ></el-table-column>
                     <el-table-column prop="winRatePercent"
                                      label="% успешных"
-                                     :formatter="winRateFormatter"
+                                     :formatter="getWinratePercent"
                     ></el-table-column>
                 </el-table>
             </el-col>
@@ -46,35 +40,27 @@
                 <h1>По неделям</h1>
                 <el-table class="stats-table"
                           :data="weeklyItems"
-                          :row-class-name="weeklyTableRowClass"
+                          :row-class-name="getTableRowClass"
                           :empty-text="weeklyLoadingText"
                           border
                 >
-                    <el-table-column prop="dayRange"
-                                     label="Диапазон дней"
-                                     width="115"
-                    >
-                        <template slot-scope="scope">
-                            <span>
-                                {{ weeklyDaysColFormatter(scope.row) }}
-                            </span>
-                        </template>
+                    <el-table-column prop="dayRange" label="Диапазон дней" width="115" :formatter="getWeeklyDate">
                     </el-table-column>
                     <el-table-column prop="income"
                                      label="Сумма за неделю"
-                                     :formatter="weeklyIncomeFormatter"
+                                     :formatter="getIncome"
                     ></el-table-column>
                     <el-table-column prop="contractsCount" label="Всего сделок" width="105"></el-table-column>
                     <el-table-column prop="winningContracts" label="Сделки +" width="80"></el-table-column>
                     <el-table-column prop="loosedContracts"
                                      label="Сделки -"
                                      width="80"
-                                     :formatter="weeklyLoosedContractsFormatter"
+                                     :formatter="getLoosedContracts"
                     ></el-table-column>
                     <el-table-column prop="winRatePercent"
                                      label="% успешных"
                                      width="105"
-                                     :formatter="weeklyWinRateFormatter"
+                                     :formatter="getWinratePercent"
                     ></el-table-column>
                 </el-table>
             </el-col>
@@ -82,32 +68,30 @@
                 <h1>По месяцам</h1>
                 <el-table class="stats-table"
                           :data="monthlyItems"
-                          :row-class-name="monthlyTableRowClass"
+                          :row-class-name="getTableRowClass"
                           :empty-text="monthlyLoadingText"
                           border
                 >
-                    <el-table-column prop="monthYear" label="Месяц и год">
-                        <template slot-scope="scope">
-                            <span class="capitalize">
-                                {{ monthlyDaysColFormatter(scope.row) }}
-                            </span>
-                        </template>
-                    </el-table-column>
+                    <el-table-column prop="monthYear"
+                                     class-name="capitalize"
+                                     label="Месяц и год"
+                                     :formatter="getMonthlyDate"
+                    ></el-table-column>
                     <el-table-column prop="income"
                                      label="Сумма за месяц"
-                                     :formatter="monthlyIncomeFormatter"
+                                     :formatter="getIncome"
                     ></el-table-column>
                     <el-table-column prop="contractsCount" label="Всего сделок" width="105"></el-table-column>
                     <el-table-column prop="winningContracts" label="Сделки +" width="80"></el-table-column>
                     <el-table-column prop="loosedContracts"
                                      label="Сделки -"
                                      width="80"
-                                     :formatter="monthlyLoosedContractsFormatter"
+                                     :formatter="getLoosedContracts"
                     ></el-table-column>
                     <el-table-column prop="winRatePercent"
                                      label="% успешных"
                                      width="105"
-                                     :formatter="monthlyWinRateFormatter"
+                                     :formatter="getWinratePercent"
                     ></el-table-column>
                 </el-table>
             </el-col>
@@ -124,7 +108,8 @@
     import WeeklyStatsItem from "../models/WeeklyStatsItem";
     import MonthlyStatsItem from "../models/MonthlyStatsItem";
     import AllTimeStats from "../models/AllTimeStats";
-    import Contract from "../models/Contract";
+    import AllStats from "../models/AllStats"
+    import * as StatsHelper from "../utils/StatsHelper"
 
     @Component
     export default class Stats extends Vue {
@@ -139,114 +124,55 @@
         monthlyLoadingText: string = "Данные загружаются..."
 
         created() {
-            const fetchMonthly = () => fetchAndResolveArray(
-                ApiRoutes.monthlyStats,
-                MonthlyStatsItem,
-                (monthlyItems: MonthlyStatsItem[]) => {
-                    console.log("DONE: ", monthlyItems)
-                    this.monthlyItems = monthlyItems
-                },
-                defaultActionOnError(_ => this.monthlyLoadingText = "Произошла ошибка при загрузке данных!")
-            )
-            const fetchWeekly = () => fetchAndResolveArray(
-                ApiRoutes.weeklyStats,
-                WeeklyStatsItem,
-                (weeklyItems: WeeklyStatsItem[]) => {
-                    console.log("DONE: ", weeklyItems)
-                    this.weeklyItems = weeklyItems
-                    fetchMonthly()
-                },
-                defaultActionOnError(_ => this.weeklyLoadingText = "Произошла ошибка при загрузке данных!")
-            )
-            const fetchDaily = () => fetchAndResolveArray(
-                ApiRoutes.dailyStats,
-                DailyStatsItem,
-                (dailyItems: DailyStatsItem[]) => {
-                    console.log("DONE: ", dailyItems)
-                    this.dailyItems = dailyItems
-                    fetchWeekly()
-                },
-                defaultActionOnError(_ => this.dailyLoadingText = "Произошла ошибка при загрузке данных!")
-            )
             fetchAndResolve(
-                ApiRoutes.allTimeStats,
-                AllTimeStats,
-                (allTimeStats: AllTimeStats) => {
-                    console.log("DONE: ", allTimeStats)
-                    this.allTimeStats = allTimeStats
-                    fetchDaily()
+                ApiRoutes.allStats,
+                AllStats,
+                (allStats: AllStats) => {
+                    console.log("DONE: ", allStats)
+                    this.allTimeStats = allStats.allTime
+                    this.dailyItems = allStats.daily
+                    this.weeklyItems = allStats.weekly
+                    this.monthlyItems = allStats.monthly
                 },
                 defaultActionOnError()
             )
         }
 
+        // TODO: переиспользовать обобщённые методы для таблицы сделок и заодно мб вынести куда-то:
 
-        dayColFormatter(row: DailyStatsItem): string {
-            return row.dayF()
+        getIncome<T extends { income: number }>(statsItem: T): string {
+            return StatsHelper.getIncome(statsItem.income)
         }
 
-        incomeFormatter(row: DailyStatsItem): string {
-            return row.incomeF()
+        getLoosedContracts<T extends { contractsCount: number, winningContracts: number }>(statsItem: T): string {
+            return String(StatsHelper.getLoosedContracts(statsItem.contractsCount, statsItem.winningContracts))
         }
 
-        loosedContractsFormatter(row: DailyStatsItem): string {
-            return row.loosedContractsF()
+        getWinratePercent<T extends { contractsCount: number, winningContracts: number }>(statsItem: T): string {
+            return String(StatsHelper.getWinratePercent(statsItem.contractsCount, statsItem.winningContracts)) + "%"
         }
 
-        winRateFormatter(row: DailyStatsItem): string {
-            return row.winRatePercentF()
-        }
-
-        tableRowClass({row}: {row: DailyStatsItem, rowIndex: number}): string {
+        getTableRowClass<T extends { row: { income: number }, rowIndex: number }>({row}: T): string {
             return row.income >= 0 ? "success-row" : "fail-row"
         }
 
 
-        weeklyDaysColFormatter(row: WeeklyStatsItem): string {
-            return row.dayFromF() + " - " + row.dayToF()
+        getDailyDate(item: DailyStatsItem): string {
+            return StatsHelper.getDate(item.day)
         }
 
-        weeklyIncomeFormatter(row: DailyStatsItem): string {
-            return row.incomeF()
+        getWeeklyDate(item: WeeklyStatsItem): string {
+            return StatsHelper.getDate(item.dayFrom) + " - " + StatsHelper.getDate(item.dayTo)
         }
 
-        weeklyLoosedContractsFormatter(row: WeeklyStatsItem): string {
-            return row.loosedContractsF()
-        }
-
-        weeklyWinRateFormatter(row: WeeklyStatsItem): string {
-            return row.winRatePercentF()
-        }
-
-        weeklyTableRowClass({row}: {row: WeeklyStatsItem, rowIndex: number}): string {
-            return row.income >= 0 ? "success-row" : "fail-row"
-        }
-
-
-        monthlyDaysColFormatter(row: MonthlyStatsItem): string {
-            return row.firstMonthDayF("LLLL yyyy")
-        }
-
-        monthlyIncomeFormatter(row: DailyStatsItem): string {
-            return row.incomeF()
-        }
-
-        monthlyLoosedContractsFormatter(row: MonthlyStatsItem): string {
-            return row.loosedContractsF()
-        }
-
-        monthlyWinRateFormatter(row: MonthlyStatsItem): string {
-            return row.winRatePercentF()
-        }
-
-        monthlyTableRowClass({row}: {row: MonthlyStatsItem, rowIndex: number}): string {
-            return row.income >= 0 ? "success-row" : "fail-row"
+        getMonthlyDate(item: MonthlyStatsItem): string {
+            return StatsHelper.getDate(item.firstMonthDay, "LLLL yyyy")
         }
     }
 </script>
 
 <style>
-    span.capitalize {
+    td.capitalize .cell {
         text-transform: capitalize;
     }
     .el-table .success-row {

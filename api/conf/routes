@@ -36,7 +36,8 @@ GET     /api/deleteContract/:id     controllers.ContractController.deleteContrac
 
 GET     /api/newContractData        controllers.ContractController.newContractData
 
-GET     /api/stats/allTime          controllers.StatsController.allTimeStats()
-GET     /api/stats/daily            controllers.StatsController.dailyStats()
-GET     /api/stats/weekly           controllers.StatsController.weeklyStats()
-GET     /api/stats/monthly          controllers.StatsController.monthlyStats()
+GET     /api/stats/allTime          controllers.StatsController.allTimeStats
+GET     /api/stats/daily            controllers.StatsController.dailyStats
+GET     /api/stats/weekly           controllers.StatsController.weeklyStats
+GET     /api/stats/monthly          controllers.StatsController.monthlyStats
+GET     /api/stats/all              controllers.StatsController.allStats

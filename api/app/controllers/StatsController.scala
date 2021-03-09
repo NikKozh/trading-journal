@@ -32,7 +32,7 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
     extends ExceptionHandler(mcc)
         with ErrorHandler {
 
-    def allTimeStats(): Action[AnyContent] = Action.async {
+    private def getAllTimeStats =
         contractService
             .list
             .map(allContracts =>
@@ -42,6 +42,9 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
                     winningContracts = allContracts.count(_.isWin)
                 )
             )
+
+    def allTimeStats: Action[AnyContent] = Action.async {
+        getAllTimeStats
             .map(Json.toJson[AllTimeStats])
             .map(Ok(_))
             .recover { case e =>
@@ -49,7 +52,7 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
             }
     }
 
-    private def dailyStatsItems =
+    private def getDailyStatsItems =
         contractService
             .list
             .map(_
@@ -68,13 +71,8 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
                 .sortBy(_.day)(Ordering.Long.reverse)
             )
 
-    @scala.annotation.tailrec
-    private def findFirstDayOfTheWeekForDate(date: LocalDate): LocalDate =
-        if (date.getDayOfWeek == DayOfWeek.MONDAY) date
-        else findFirstDayOfTheWeekForDate(date minusDays 1)
-
-    def dailyStats(): Action[AnyContent] = Action.async {
-        dailyStatsItems
+    def dailyStats: Action[AnyContent] = Action.async {
+        getDailyStatsItems
             .map(Json.toJson[Seq[DailyStatsItem]])
             .map(Ok(_))
             .recover { case e =>
@@ -88,39 +86,46 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
             .toLocalDateTime
             .toLocalDate
 
-    def weeklyStats(): Action[AnyContent] = Action.async {
-        dailyStatsItems
-            .map(_
-                .groupBy(dailyItem =>
-                    epochMilliToLocalDate(dailyItem.day).getYear
-                )
-                .view
-                .mapValues(_
-                    .groupBy(dailyItem =>
-                        epochMilliToLocalDate(dailyItem.day).get(WeekFields.ISO.weekOfYear())
-                    )
-                    .values
-                    .toSeq
-                    .map { dailyStatsItemsOnWeek =>
-                        val sortedItems = dailyStatsItemsOnWeek.sortBy(_.day)
-                        val day = epochMilliToLocalDate(sortedItems.head.day)
-                        val firstDayOfWeek = findFirstDayOfTheWeekForDate(day)
-                        val lastDayOfWeek = firstDayOfWeek plusDays 6
+    @scala.annotation.tailrec
+    private def findFirstDayOfTheWeekForDate(date: LocalDate): LocalDate =
+        if (date.getDayOfWeek == DayOfWeek.MONDAY) date
+        else findFirstDayOfTheWeekForDate(date minusDays 1)
 
-                        WeeklyStatsItem(
-                            dayFrom = firstDayOfWeek.toEpochMilli,
-                            dayTo = lastDayOfWeek.toEpochMilli,
-                            income = sortedItems.map(_.income).sum,
-                            contractsCount = sortedItems.map(_.contractsCount).sum,
-                            winningContracts = sortedItems.map(_.winningContracts).sum
-                        )
-                    }
+    private def getWeeklyStatsItems(dailyStatsItems: Seq[DailyStatsItem]) =
+        dailyStatsItems
+            .groupBy(dailyItem =>
+                epochMilliToLocalDate(dailyItem.day).getYear
+            )
+            .view
+            .mapValues(_
+                .groupBy(dailyItem =>
+                    epochMilliToLocalDate(dailyItem.day).get(WeekFields.ISO.weekOfYear())
                 )
                 .values
                 .toSeq
-                .flatten
-                .sortBy(_.dayFrom)(Ordering.Long.reverse)
+                .map { dailyStatsItemsOnWeek =>
+                    val sortedItems = dailyStatsItemsOnWeek.sortBy(_.day)
+                    val day = epochMilliToLocalDate(sortedItems.head.day)
+                    val firstDayOfWeek = findFirstDayOfTheWeekForDate(day)
+                    val lastDayOfWeek = firstDayOfWeek plusDays 6
+
+                    WeeklyStatsItem(
+                        dayFrom = firstDayOfWeek.toEpochMilli,
+                        dayTo = lastDayOfWeek.toEpochMilli,
+                        income = sortedItems.map(_.income).sum,
+                        contractsCount = sortedItems.map(_.contractsCount).sum,
+                        winningContracts = sortedItems.map(_.winningContracts).sum
+                    )
+                }
             )
+            .values
+            .toSeq
+            .flatten
+            .sortBy(_.dayFrom)(Ordering.Long.reverse)
+
+    def weeklyStats: Action[AnyContent] = Action.async {
+        getDailyStatsItems
+            .map(getWeeklyStatsItems)
             .map(Json.toJson[Seq[WeeklyStatsItem]])
             .map(Ok(_))
             .recover { case e =>
@@ -128,37 +133,56 @@ class StatsController @Inject()(mcc: MessagesControllerComponents,
             }
     }
 
-    def monthlyStats(): Action[AnyContent] = Action.async {
+    private def getMonthlyStatsItems(dailyStatsItems: Seq[DailyStatsItem]) =
         dailyStatsItems
-            .map(_
+            .groupBy(dailyStatsItem =>
+                epochMilliToLocalDate(dailyStatsItem.day).getYear
+            )
+            .view
+            .mapValues(_
                 .groupBy(dailyStatsItem =>
-                    epochMilliToLocalDate(dailyStatsItem.day).getYear
-                )
-                .view
-                .mapValues(_
-                    .groupBy(dailyStatsItem =>
-                        epochMilliToLocalDate(dailyStatsItem.day).getMonth
-                    )
-                    .values
-                    .toSeq
-                    .map { dailyStatsItemsWithinMonth =>
-                        val anyDay = epochMilliToLocalDate(dailyStatsItemsWithinMonth.head.day)
-                        val firstMonthDay = LocalDate.of(anyDay.getYear, anyDay.getMonth, 1).toEpochMilli
-
-                        MonthlyStatsItem(
-                            firstMonthDay,
-                            income = dailyStatsItemsWithinMonth.map(_.income).sum,
-                            contractsCount = dailyStatsItemsWithinMonth.map(_.contractsCount).sum,
-                            winningContracts = dailyStatsItemsWithinMonth.map(_.winningContracts).sum
-                        )
-                    }
+                    epochMilliToLocalDate(dailyStatsItem.day).getMonth
                 )
                 .values
                 .toSeq
-                .flatten
-                .sortBy(_.firstMonthDay)(Ordering.Long.reverse)
+                .map { dailyStatsItemsWithinMonth =>
+                    val anyDay = epochMilliToLocalDate(dailyStatsItemsWithinMonth.head.day)
+                    val firstMonthDay = LocalDate.of(anyDay.getYear, anyDay.getMonth, 1).toEpochMilli
+
+                    MonthlyStatsItem(
+                        firstMonthDay,
+                        income = dailyStatsItemsWithinMonth.map(_.income).sum,
+                        contractsCount = dailyStatsItemsWithinMonth.map(_.contractsCount).sum,
+                        winningContracts = dailyStatsItemsWithinMonth.map(_.winningContracts).sum
+                    )
+                }
             )
+            .values
+            .toSeq
+            .flatten
+            .sortBy(_.firstMonthDay)(Ordering.Long.reverse)
+
+    def monthlyStats: Action[AnyContent] = Action.async {
+        getDailyStatsItems
+            .map(getMonthlyStatsItems)
             .map(Json.toJson[Seq[MonthlyStatsItem]])
+            .map(Ok(_))
+            .recover { case e =>
+                databaseErrorResponse("Что-то пошло не так при попытке загрузить список сделок", e)
+            }
+    }
+
+    def allStats: Action[AnyContent] = Action.async {
+        val allStats =
+            for {
+                allTime <- getAllTimeStats
+                daily <- getDailyStatsItems
+                weekly = getWeeklyStatsItems(daily)
+                monthly = getMonthlyStatsItems(daily)
+            } yield AllStats(allTime, daily, weekly, monthly)
+
+        allStats
+            .map(Json.toJson[AllStats])
             .map(Ok(_))
             .recover { case e =>
                 databaseErrorResponse("Что-то пошло не так при попытке загрузить список сделок", e)

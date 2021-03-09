@@ -5,16 +5,8 @@ export default class MonthlyStatsItem {
     @CodecProperty({ isRequired: true, type: Number })
     firstMonthDay: number
 
-    firstMonthDayF(formatString?: string): string {
-        return formatDate(this.firstMonthDay, formatString)
-    }
-
     @CodecProperty({ isRequired: true })
     income: number
-
-    incomeF(): string {
-        return formatMoney(this.income)
-    }
 
     @CodecProperty({ isRequired: true })
     contractsCount: number
@@ -27,22 +19,5 @@ export default class MonthlyStatsItem {
         this.income = income
         this.contractsCount = contractsCount
         this.winningContracts = winningContracts
-    }
-
-    loosedContracts(): number {
-        return this.contractsCount - this.winningContracts
-    }
-
-    loosedContractsF(): string {
-        return String(this.loosedContracts())
-    }
-
-    winRatePercent(): number {
-        const float = (this.winningContracts * 100) / this.contractsCount
-        return Number.parseFloat(float.toFixed(2))
-    }
-
-    winRatePercentF(): string {
-        return String(this.winRatePercent()) + "%"
     }
 }
