@@ -1,27 +1,3 @@
-GET     /                           controllers.ContractController.contractList
-
-GET     /addContractDraft           controllers.ContractController.addContractDraft()
-POST    /submitContractDraft        controllers.ContractController.submitContractDraft()
-
-GET     /addRawContractDraft        controllers.ContractController.addRawContractDraft()
-POST    /submitRawContractDraft     controllers.ContractController.submitRawContractDraft()
-
-+nocsrf
-POST    /submitProfitTable          controllers.ContractController.submitProfitTable()
-
-GET     /editPrefillContract/:id    controllers.ContractController.editPrefillContract(id: String)
-
-GET     /addEditContract            controllers.ContractController.addEditContract(id: Option[String] ?= None)
-POST    /addEditContract            controllers.ContractController.submitContract(idForUpdate: Option[String] ?= None)
-
-GET     /viewContract/:id           controllers.ContractController.viewContract(id: String)
-
-GET     /deleteContract/:id         controllers.ContractController.deleteContract(id: String)
-
-GET     /generalStats               controllers.StatsController.generalStats()
-
-POST    /submitStrategyFilter       controllers.UserSettingController.submitStrategyFilter(backUrl: String)
-
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
 GET     /ping                       controllers.ContractController.ping()

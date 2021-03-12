@@ -102,13 +102,13 @@
 <script lang="ts">
     import Vue from "vue"
     import {Component} from "vue-property-decorator";
-    import DailyStatsItem from "../models/DailyStatsItem";
-    import {defaultActionOnError, fetchAndResolve, fetchAndResolveArray} from "../utils/apiJsonResolver";
+    import DailyStatsItem from "../models/stats/DailyStatsItem";
+    import {defaultActionOnError, fetchAndResolve} from "../utils/apiJsonResolver";
     import ApiRoutes from "../router/ApiRoutes";
-    import WeeklyStatsItem from "../models/WeeklyStatsItem";
-    import MonthlyStatsItem from "../models/MonthlyStatsItem";
-    import AllTimeStats from "../models/AllTimeStats";
-    import AllStats from "../models/AllStats"
+    import WeeklyStatsItem from "../models/stats/WeeklyStatsItem";
+    import MonthlyStatsItem from "../models/stats/MonthlyStatsItem";
+    import AllTimeStats from "../models/stats/AllTimeStats";
+    import AllStats from "../models/stats/AllStats"
     import * as StatsHelper from "../utils/StatsHelper"
 
     @Component

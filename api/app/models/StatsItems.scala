@@ -1,4 +1,4 @@
-package models.stats
+package models
 
 import play.api.libs.json.{Json, OWrites, Reads}
 

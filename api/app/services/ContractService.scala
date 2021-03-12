@@ -26,24 +26,9 @@ trait ContractService {
 }
 
 @Singleton
-class ContractServiceInMemoryImpl extends ContractService {
-    private val storage: mutable.Map[String, Contract] = mutable.Map.empty
+class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
+    extends ContractService {
 
-    override def save(contract: Contract): Future[Option[Contract]] = {
-        storage += contract.id -> contract
-        Future.successful(Some(contract))
-    }
-
-    override def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean] = ???
-
-    override def get(id: String)(implicit ec: ExecutionContext): Future[Option[Contract]] = Future(storage.get(id))
-    override def get(idOpt: Option[String])(implicit ec: ExecutionContext): Future[Option[Contract]] = Future(idOpt.flatMap(storage.get))
-
-    override def list: Future[Seq[Contract]] = Future.successful(storage.values.toSeq.sortBy(_.number))
-}
-
-@Singleton
-class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: DatabaseConfigProvider) extends ContractService {
     private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
     import dbConfig._

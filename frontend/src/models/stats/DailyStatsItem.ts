@@ -1,5 +1,5 @@
 import {Property as CodecProperty} from "@orchestrator/gen-io-ts";
-import {formatDate, formatMoney} from "../utils/Formatters";
+import {formatDate, formatMoney} from "../../utils/Formatters";
 
 export default class DailyStatsItem {
     @CodecProperty({ isRequired: true, type: Number })
