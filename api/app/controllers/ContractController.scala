@@ -152,7 +152,7 @@ case class ApiError(caption: String, cause: String, details: Option[String] = No
         BadRequest(Json.toJson(this))
 
     def asAsyncResult(implicit ec: ExecutionContext): Future[Result] =
-        Future(BadRequest(Json.toJson(this)))
+        Future(asResult)
 }
 object ApiError extends OptionNullJsonWriter {
     implicit val apiErrorWrites: OWrites[ApiError] = Json.writes
