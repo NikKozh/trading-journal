@@ -6,11 +6,11 @@ import scala.concurrent.ExecutionContext
 
 trait ErrorHandler {
     def databaseErrorResponse(errorCause: String, exception: Throwable)(implicit ec: ExecutionContext): Result =
-        ApiError.asResult(
+        ApiError(
             caption = "DATABASE PROBLEM",
             cause = errorCause,
             details = Some(exception.getMessage)
-        )
+        ).asResult
 
     def contractNotFound(id: String): ApiError =
         ApiError(

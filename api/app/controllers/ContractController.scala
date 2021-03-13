@@ -48,10 +48,10 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
             processScreenshots(contract.screenshotPaths)
                 .map(screenshots => contract.copy(screenshotPaths = screenshots))
                 .fold(
-                    error => ApiError.asAsyncResult(
+                    error => ApiError(
                         caption = "SCREENSHOT PARSING PROBLEM",
                         cause = error
-                    ),
+                    ).asAsyncResult,
                     updatedContract =>
                         contractService
                             .save(updatedContract)
@@ -92,11 +92,11 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
                 contractService.getNewNumber.flatMap { contractNumber =>
                     createPrefilledContract(profitTableJson, prefillContractData, contractNumber)
                         .fold(
-                            error => ApiError.asAsyncResult(
+                            error => ApiError(
                                 caption = "PREFILL CONTRACT PROBLEM",
                                 cause = "Что-то пошло не так при попытке создать предзаполеннную сделку",
                                 details = Some(error)
-                            ),
+                            ).asAsyncResult,
                             prefilledContract =>
                                 contractService
                                     .save(prefilledContract)
@@ -112,11 +112,11 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
                     databaseErrorResponse("Что-то пошло не так при попытке получить номер для новой сделки", e)
                 }
             }.recover { e =>
-                ApiError.asResult(
+                ApiError(
                     caption = "PROFIT TABLE REQUEST PROBLEM",
                     cause = "Что-то пошло не так при попытке запросить список сделок у брокера",
                     details = Some(e.getMessage)
-                )
+                ).asResult
             }
         }
     }
@@ -147,17 +147,15 @@ object Ping {
     implicit val pingWrites: OWrites[Ping] = Json.writes
 }
 
-case class ApiError(caption: String, cause: String, details: Option[String] = None)
+case class ApiError(caption: String, cause: String, details: Option[String] = None) {
+    def asResult(implicit ec: ExecutionContext): Result =
+        BadRequest(Json.toJson(this))
+
+    def asAsyncResult(implicit ec: ExecutionContext): Future[Result] =
+        Future(BadRequest(Json.toJson(this)))
+}
 object ApiError extends OptionNullJsonWriter {
     implicit val apiErrorWrites: OWrites[ApiError] = Json.writes
-
-    def asResult(caption: String, cause: String, details: Option[String] = None)
-                (implicit ec: ExecutionContext): Result =
-        BadRequest(Json.toJson(ApiError(caption, cause, details)))
-
-    def asAsyncResult(caption: String, cause: String, details: Option[String] = None)
-                     (implicit ec: ExecutionContext): Future[Result] =
-        Future(BadRequest(Json.toJson(ApiError(caption, cause, details))))
 }
 
 case class PrefillContractData(transactionId: String, screenshotUrls: String)

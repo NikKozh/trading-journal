@@ -22,19 +22,19 @@ trait ContractControllerHelper {
         lazy val entityType = implicitly[ClassTag[T]].runtimeClass.getSimpleName
 
         request.body.asJson.map(json => Try(json.as[T])).map(_.fold(
-            exception => ApiError.asAsyncResult(
+            exception => ApiError(
                 caption = "JSON PARSING PROBLEM",
                 cause = s"Что-то пошло не так при попытке распарсить JSON сущности $entityType из тела запроса. " +
                         s"JSON: ${request.body.asJson.getOrElse("")}",
                 details = Some(exception.getMessage)
-            ),
+            ).asAsyncResult,
             action
         )).getOrElse(
-            ApiError.asAsyncResult(
+            ApiError(
                 caption = "REQUEST BODY PROBLEM",
                 cause = s"Что-то пошло не так при попытке получить JSON сущности $entityType из тела запроса",
                 details = Some(s"Тело запроса: ${request.body}")
-            )
+            ).asAsyncResult
         )
     }
 
