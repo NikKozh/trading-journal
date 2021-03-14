@@ -25,12 +25,23 @@
     import * as O from "fp-ts/es6/Option"
     import {defaultActionOnError, simpleRequest} from "../utils/apiJsonResolver"
     import ApiRoutes from "../router/ApiRoutes"
-    import Routes from "../router/Routes"
-    import goToPage from "../router/goToPage";
+    import goToPage from "../router/goToPage"
+    import {isFullPermissions} from "../utils/Helper"
 
     @Component
     export default class ContractInfoBox extends Vue {
-        form = { prefillData: "" }
+        private demoData =
+`В качестве тестовых данных можно использовать:
+
+1 вариант:
+51984715861
+https://i.ibb.co/mtd5B4N/Contract.png
+
+2 вариант:
+51982957741
+https://i.ibb.co/mtd5B4N/Contract.png`
+
+        form = { prefillData: isFullPermissions() ? "" : this.demoData }
 
         rules = {
             prefillData: [

@@ -3,7 +3,6 @@ package controllers
 import java.sql.Timestamp
 import java.util.UUID
 import helpers.{BinaryHelper, ConfigHelper, ContractControllerHelper, OptionNullJsonWriter}
-
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
@@ -12,7 +11,7 @@ import play.api.Configuration
 import play.api.libs.json.{Json, OWrites, Reads, __}
 import play.api.mvc.Results.BadRequest
 import utils.ErrorHandler
-
+import helpers.AuthHelper._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -34,9 +33,9 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
         }
     }
 
-    def contractListNew: Action[AnyContent] = Action.async {
+    def contractListNew: Action[AnyContent] = Action.async { implicit request =>
         contractService
-            .list
+            .list(request.authForGuest)
             .map(Json.toJson[Seq[Contract]])
             .map(Ok(_))
             // TODO: обобщить блок с .recover
@@ -45,9 +44,9 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
             }
     }
 
-    def contractCardNew(id: String): Action[AnyContent] = Action.async {
+    def contractCardNew(id: String): Action[AnyContent] = Action.async { implicit request =>
         contractService
-            .get(id)
+            .get(id, request.authForGuest)
             .map(_
                 .toRight(contractNotFound(id))
                 .fold(error => BadRequest(Json.toJson(error)), contract => Ok(Json.toJson(contract)))
@@ -61,6 +60,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
         readAndParseJsonWithErrorHandling[Contract] { contract =>
             processScreenshots(contract.screenshotPaths)
                 .map(screenshots => contract.copy(screenshotPaths = screenshots))
+                .map(_.copy(forGuest = request.authForGuest))
                 .fold(
                     error => ApiError(
                         caption = "SCREENSHOT PARSING PROBLEM",
@@ -81,7 +81,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
 
     def deleteContractNew(id: String): Action[AnyContent] = Action.async { implicit request =>
         contractService
-            .delete(id)
+            .delete(id, request.authForGuest)
             .map(isDeleted =>
                 if (isDeleted) Ok
                 else           BadRequest(Json.toJson(contractNotFound(id)))
@@ -93,7 +93,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
 
     def newContractData: Action[AnyContent] = Action.async { implicit request =>
         contractService
-            .getNewNumber
+            .getNewNumber(request.authForGuest)
             .map(newNumber => Ok(Json.toJson(NewContractData(UUID.randomUUID().toString, newNumber))))
             .recover { case e =>
                 databaseErrorResponse("Что-то пошло не так при попытке получить номер для новой сделки", e)
@@ -103,8 +103,9 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
     def prefillContractNew: Action[AnyContent] = Action.async { implicit request =>
         readAndParseJsonWithErrorHandling[PrefillContractData] { prefillContractData =>
             BinaryHelper.getProfitTable.flatMap { profitTableJson =>
-                contractService.getNewNumber.flatMap { contractNumber =>
+                contractService.getNewNumber(request.authForGuest).flatMap { contractNumber =>
                     createPrefilledContract(profitTableJson, prefillContractData, contractNumber)
+                        .map(_.copy(forGuest = request.authForGuest))
                         .fold(
                             error => ApiError(
                                 caption = "PREFILL CONTRACT PROBLEM",

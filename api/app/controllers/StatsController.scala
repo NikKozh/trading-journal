@@ -11,6 +11,7 @@ import services.ContractService
 import utils.ErrorHandler
 import java.sql.Timestamp
 import scala.concurrent.ExecutionContext
+import helpers.AuthHelper._
 
 @Singleton
 class StatsController @Inject()(cc: ControllerComponents,
@@ -19,9 +20,9 @@ class StatsController @Inject()(cc: ControllerComponents,
     extends AbstractController(cc)
         with ErrorHandler {
 
-    private def getAllTimeStats =
+    private def getAllTimeStats(implicit request: Request[_]) =
         contractService
-            .list
+            .list(request.authForGuest)
             .map(allContracts =>
                 AllTimeStats(
                     income = allContracts.flatMap(_.income).sum,
@@ -30,7 +31,7 @@ class StatsController @Inject()(cc: ControllerComponents,
                 )
             )
 
-    def allTimeStats: Action[AnyContent] = Action.async {
+    def allTimeStats: Action[AnyContent] = Action.async { implicit request =>
         getAllTimeStats
             .map(Json.toJson[AllTimeStats])
             .map(Ok(_))
@@ -39,9 +40,9 @@ class StatsController @Inject()(cc: ControllerComponents,
             }
     }
 
-    private def getDailyStatsItems =
+    private def getDailyStatsItems(implicit request: Request[_]) =
         contractService
-            .list
+            .list(request.authForGuest)
             .map(_
                 .map(c => (c.created.toLocalDateTime.toLocalDate, c))
                 .groupBy(_._1)
@@ -58,7 +59,7 @@ class StatsController @Inject()(cc: ControllerComponents,
                 .sortBy(_.day)(Ordering.Long.reverse)
             )
 
-    def dailyStats: Action[AnyContent] = Action.async {
+    def dailyStats: Action[AnyContent] = Action.async { implicit request =>
         getDailyStatsItems
             .map(Json.toJson[Seq[DailyStatsItem]])
             .map(Ok(_))
@@ -110,7 +111,7 @@ class StatsController @Inject()(cc: ControllerComponents,
             .flatten
             .sortBy(_.dayFrom)(Ordering.Long.reverse)
 
-    def weeklyStats: Action[AnyContent] = Action.async {
+    def weeklyStats: Action[AnyContent] = Action.async { implicit request =>
         getDailyStatsItems
             .map(getWeeklyStatsItems)
             .map(Json.toJson[Seq[WeeklyStatsItem]])
@@ -149,7 +150,7 @@ class StatsController @Inject()(cc: ControllerComponents,
             .flatten
             .sortBy(_.firstMonthDay)(Ordering.Long.reverse)
 
-    def monthlyStats: Action[AnyContent] = Action.async {
+    def monthlyStats: Action[AnyContent] = Action.async { implicit request =>
         getDailyStatsItems
             .map(getMonthlyStatsItems)
             .map(Json.toJson[Seq[MonthlyStatsItem]])
@@ -159,7 +160,7 @@ class StatsController @Inject()(cc: ControllerComponents,
             }
     }
 
-    def allStats: Action[AnyContent] = Action.async {
+    def allStats: Action[AnyContent] = Action.async { implicit request =>
         val allStats =
             for {
                 allTime <- getAllTimeStats

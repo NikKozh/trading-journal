@@ -18,6 +18,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
                     tags: String = "", // TODO: пока просто строкой с разделителем в виде запятой, потом надо разбить на Seq[String] или даже на Seq с отдельными объектами
                     isCorrect: Boolean = false, // вход по ТС? TODO: сделать опциональным
                     description: String = "",
+                    forGuest: Boolean = false, // TODO: потом выпилить, когда будет нормальная система пользователей
                     buyPrice: Option[Double], // в долларах
                     profitPercent: Option[Double] // от 0 до 1; потенциальный, обозначается даже в убыточных сделках
                    ) {

@@ -57,4 +57,7 @@
         padding: 20px 0;
         font-size: 24px;
     }
+    .el-header {
+        height: auto !important;
+    }
 </style>
