@@ -15,6 +15,7 @@ import scala.reflect._
 object ContractControllerHelper extends ContractControllerHelper
 
 trait ContractControllerHelper {
+    // TODO: кажется это слишком обобщённая вещь, чтобы сидеть в хелпере контракта; надо вынести
     def readAndParseJsonWithErrorHandling[T : ClassTag](action: T => Future[Result])
                                                        (implicit request: MessagesRequest[AnyContent],
                                                                  jsonReads: Reads[T],

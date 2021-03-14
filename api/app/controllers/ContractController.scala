@@ -2,7 +2,8 @@ package controllers
 
 import java.sql.Timestamp
 import java.util.UUID
-import helpers.{BinaryHelper, ContractControllerHelper, OptionNullJsonWriter}
+import helpers.{BinaryHelper, ConfigHelper, ContractControllerHelper, OptionNullJsonWriter}
+
 import javax.inject._
 import play.api.mvc._
 import services.ContractService
@@ -11,6 +12,7 @@ import play.api.Configuration
 import play.api.libs.json.{Json, OWrites, Reads, __}
 import play.api.mvc.Results.BadRequest
 import utils.ErrorHandler
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -19,6 +21,18 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
     extends MessagesAbstractController(mcc)
         with ContractControllerHelper
         with ErrorHandler {
+
+    // TODO: авторизация это не дело контракта, по идее нужен отдельный контроллер
+    def signIn: Action[AnyContent] = Action.async { implicit request =>
+        readAndParseJsonWithErrorHandling[SignInData] { signInData =>
+            ConfigHelper.getConfigValue[String]("authData.password").map { actualPassword =>
+                if (actualPassword == signInData.password)
+                    Ok
+                else
+                    ApiError("AUTHORIZATION ERROR", "Неверный пароль!").asResult
+            }
+        }
+    }
 
     def contractListNew: Action[AnyContent] = Action.async {
         contractService
@@ -161,4 +175,9 @@ object ApiError extends OptionNullJsonWriter {
 case class PrefillContractData(transactionId: String, screenshotUrls: String)
 object PrefillContractData {
     implicit val prefillContractDataReads: Reads[PrefillContractData] = Json.reads
+}
+
+case class SignInData(password: String)
+object SignInData {
+    implicit val signInDataReads: Reads[SignInData] = Json.reads
 }

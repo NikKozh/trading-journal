@@ -2,6 +2,8 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 
 GET     /ping                       controllers.ContractController.ping()
 
+POST    /api/signIn                 controllers.ContractController.signIn
+
 GET     /api/contractList           controllers.ContractController.contractListNew
 GET     /api/contractDetails/:id    controllers.ContractController.contractCardNew(id: String)
 

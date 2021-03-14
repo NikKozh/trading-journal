@@ -6,6 +6,9 @@ function withApiPath(route: string) {
 
 export default {
     pingMessage: withApiPath("/ping"),
+    signIn: withApiPath("/signIn"),
+    // TODO: пока signOut это просто затирание куки, но после написания нормальной авторизации нужен будет роут к API
+
     contractList: withApiPath("/contractList"),
     contractCard: (id: string) => withApiPath(`/contractDetails/${id}`),
     submitContract: withApiPath("/submitContract"),

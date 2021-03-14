@@ -77,6 +77,9 @@ export default class Contract {
         return formatOptional(flow(formatPercent, formatFloat(2, stringCorrecter)), "N/A")(this.profitPercent)
     }
 
+    @CodecProperty({ type: Boolean })
+    forGuest: boolean
+
     constructor(id: string,
                 number: number,
                 contractType: string,
@@ -89,6 +92,7 @@ export default class Contract {
                 tags: string,
                 isCorrect: boolean,
                 description: string,
+                forGuest: boolean,
                 buyPrice?: number,
                 profitPercent?: number) {
         this.id = id
@@ -103,6 +107,7 @@ export default class Contract {
         this.tags = tags
         this.isCorrect = isCorrect
         this.description = description
+        this.forGuest = forGuest
         this.buyPrice = this.getFixedFloatOpt(buyPrice)
         this.profitPercent = this.getFixedFloatOpt(profitPercent, 4)
     }
@@ -120,7 +125,8 @@ export default class Contract {
             "",
             "",
             false,
-            ""
+            "",
+            false
         )
     }
 

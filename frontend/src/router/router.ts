@@ -6,6 +6,8 @@ import VueRouter from "vue-router"
 import Routes from "./Routes"
 import ContractCard from "../views/ContractCard.vue"
 import ContractPrefillForm from "../components/ContractPrefillForm.vue"
+import SignIn from "../views/SignIn.vue"
+import SignOut from "../views/SignOut.vue"
 
 type RouteObject = {
     path: string,
@@ -18,6 +20,8 @@ const routes: RouteObject[] = [
     { path: Routes.prefillContract, component: ContractPrefillForm },
     { path: `${Routes.contractDetails}/:id/:mode`, component: ContractCard },
     { path: Routes.stats, component: Stats },
+    { path: Routes.signIn, component: SignIn },
+    { path: Routes.signOut, component: SignOut },
     // TODO: { path: '*', component: NotFoundComponent }
 ]
 
