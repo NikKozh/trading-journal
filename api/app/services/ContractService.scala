@@ -1,14 +1,10 @@
 package services
 
 import java.sql.Timestamp
-
 import models.Contract
-
-import scala.collection.mutable
 import javax.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ContractService {
@@ -16,34 +12,19 @@ trait ContractService {
      *  @return None если апдейт, Some если вставка */
     def save(contract: Contract): Future[Option[Contract]]
     /** @return удалили или нет */
-    def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean]
-    def get(id: String)(implicit ec: ExecutionContext): Future[Option[Contract]]
-    def get(idOpt: Option[String])(implicit ec: ExecutionContext): Future[Option[Contract]]
-    def list: Future[Seq[Contract]]
+    def delete(id: String, forGuest: Boolean)(implicit ec: ExecutionContext): Future[Boolean]
+    def get(id: String, forGuest: Boolean)(implicit ec: ExecutionContext): Future[Option[Contract]]
+    def get(idOpt: Option[String], forGuest: Boolean)(implicit ec: ExecutionContext): Future[Option[Contract]]
+    def list(forGuest: Boolean): Future[Seq[Contract]]
 
-    def getNewNumber(implicit ec: ExecutionContext): Future[Int] =
-        list.map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
+    def getNewNumber(forGuest: Boolean)(implicit ec: ExecutionContext): Future[Int] =
+        list(forGuest).map(l => if (l.nonEmpty) l.map(_.number).max + 1 else 1)
 }
 
 @Singleton
-class ContractServiceInMemoryImpl extends ContractService {
-    private val storage: mutable.Map[String, Contract] = mutable.Map.empty
+class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
+    extends ContractService {
 
-    override def save(contract: Contract): Future[Option[Contract]] = {
-        storage += contract.id -> contract
-        Future.successful(Some(contract))
-    }
-
-    override def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean] = ???
-
-    override def get(id: String)(implicit ec: ExecutionContext): Future[Option[Contract]] = Future(storage.get(id))
-    override def get(idOpt: Option[String])(implicit ec: ExecutionContext): Future[Option[Contract]] = Future(idOpt.flatMap(storage.get))
-
-    override def list: Future[Seq[Contract]] = Future.successful(storage.values.toSeq.sortBy(_.number))
-}
-
-@Singleton
-class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: DatabaseConfigProvider) extends ContractService {
     private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
     import dbConfig._
@@ -64,6 +45,7 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
         def tags = column[String]("tags")
         def isCorrect = column[Boolean]("isCorrect")
         def description = column[String]("description")
+        def forGuest = column[Boolean]("forGuest")
 
         def * = (
             id,
@@ -78,6 +60,7 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
             tags,
             isCorrect,
             description,
+            forGuest,
             buyPrice,
             profitPercent,
         ) <> ((Contract.apply _).tupled, Contract.unapply)
@@ -89,20 +72,26 @@ class ContractServicePostgresImpl @Inject()(protected val dbConfigProvider: Data
         (contracts returning contracts).insertOrUpdate(contract)
     }
 
-    override def delete(id: String)(implicit ec: ExecutionContext): Future[Boolean] = db.run {
-        contracts.filter(_.id === id).delete.map( deletedRows =>
-            if (deletedRows > 0) true else false
-        )
+    private def findContract(id: String, forGuest: Boolean) =
+        contracts.filter(c => (c.id === id) && (c.forGuest === forGuest))
+
+    override def delete(id: String, forGuest: Boolean)(implicit ec: ExecutionContext): Future[Boolean] = db.run {
+        findContract(id, forGuest)
+            .delete
+            .map( deletedRows =>
+                if (deletedRows > 0) true else false
+            )
     }
 
-    override def get(id: String)(implicit ec: ExecutionContext): Future[Option[Contract]] = db.run {
-        contracts.filter(_.id === id).result.headOption
+    override def get(id: String, forGuest: Boolean)(implicit ec: ExecutionContext): Future[Option[Contract]] = db.run {
+        findContract(id, forGuest).result.headOption
     }
 
-    override def get(idOpt: Option[String])(implicit ec: ExecutionContext): Future[Option[Contract]] =
-        idOpt.map(id => db.run { contracts.filter(_.id === id).result.headOption }).getOrElse(Future(None))
+    override def get(idOpt: Option[String], forGuest: Boolean)
+                    (implicit ec: ExecutionContext): Future[Option[Contract]] =
+        idOpt.map(id => get(id, forGuest)).getOrElse(Future(None))
 
-    override def list: Future[Seq[Contract]] = db.run {
-        contracts.result
+    override def list(forGuest: Boolean): Future[Seq[Contract]] = db.run {
+        contracts.filter(_.forGuest === forGuest).result
     }
 }

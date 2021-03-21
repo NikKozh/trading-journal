@@ -17,12 +17,15 @@ object Utils {
         import java.sql.Timestamp
         import java.time.LocalDate
         import java.time.format.DateTimeFormatter
+        import java.time.ZoneOffset
 
         implicit def timestampOrdering: Ordering[Timestamp] = (x: Timestamp, y: Timestamp) => x compareTo y
         implicit def localDateOrdering: Ordering[LocalDate] = (x: LocalDate, y: LocalDate) => x compareTo y
 
-        implicit class LocalDateWithRusFormatting(d: LocalDate) {
+        implicit class LocalDateWrapper(d: LocalDate) {
             def formatRus: String = d.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+
+            def toEpochMilli: Long = d.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
         }
     }
 

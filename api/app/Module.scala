@@ -1,5 +1,5 @@
 import com.google.inject.AbstractModule
-import services.{ContractService, ContractServicePostgresImpl, UserSettingsService, UserSettingsServiceImpl}
+import services.{ContractService, ContractServicePostgresImpl}
 
 class Module extends AbstractModule {
     override def configure() = {
@@ -13,6 +13,5 @@ class Module extends AbstractModule {
             bind(classOf[Counter]).to(classOf[AtomicCounter])
         */
         bind(classOf[ContractService]).to(classOf[ContractServicePostgresImpl])
-        bind(classOf[UserSettingsService]).to(classOf[UserSettingsServiceImpl])
     }
 }

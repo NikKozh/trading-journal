@@ -15,6 +15,13 @@
         </el-submenu>
 
         <el-menu-item :index="routes.stats">Статистика</el-menu-item>
+
+        <template v-if="showSignIn()">
+            <el-menu-item :index="routes.signIn">Войти</el-menu-item>
+        </template>
+        <template v-else>
+            <el-menu-item :index="routes.signOut">Выйти</el-menu-item>
+        </template>
     </el-menu>
 </template>
 
@@ -22,10 +29,15 @@
     import Vue from "vue"
     import {Component} from "vue-property-decorator"
     import Routes from "../router/Routes"
+    import {isFullPermissions} from "../utils/Helper"
 
     @Component
     export default class NavMenu extends Vue {
         routes = Routes
+
+        showSignIn(): boolean {
+            return !isFullPermissions()
+        }
     }
 </script>
 

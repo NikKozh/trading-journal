@@ -1,14 +1,9 @@
 package models
 
 import java.sql.Timestamp
-import java.util.{Date, UUID}
-
+import java.util.UUID
 import utils.Utils.Math._
-import helpers.ContractHelper.ContractType._
-import helpers.ContractHelper.FxSymbol._
-import helpers.ContractHelper.ContractDirection._
 import play.api.libs.json._
-import play.api.libs.json.Reads._
 import helpers.{JsonHelper, OptionNullJsonWriter}
 
 case class Contract(id: String = UUID.randomUUID().toString,
@@ -23,6 +18,7 @@ case class Contract(id: String = UUID.randomUUID().toString,
                     tags: String = "", // TODO: пока просто строкой с разделителем в виде запятой, потом надо разбить на Seq[String] или даже на Seq с отдельными объектами
                     isCorrect: Boolean = false, // вход по ТС? TODO: сделать опциональным
                     description: String = "",
+                    forGuest: Boolean = false, // TODO: потом выпилить, когда будет нормальная система пользователей
                     buyPrice: Option[Double], // в долларах
                     profitPercent: Option[Double] // от 0 до 1; потенциальный, обозначается даже в убыточных сделках
                    ) {
@@ -39,54 +35,4 @@ case class Contract(id: String = UUID.randomUUID().toString,
 object Contract extends JsonHelper with OptionNullJsonWriter {
     implicit val contractWrites: OWrites[Contract] = Json.writes
     implicit val contractReads: Reads[Contract] = Json.reads
-
-    def fill(dto: ContractData): Contract =
-        Contract(
-            number = dto.number,
-            contractType = dto.contractType,
-            created = Timestamp.from(dto.created.toInstant),
-            expiration = dto.expiration,
-            fxSymbol = dto.fxSymbol,
-            direction = dto.direction,
-            buyPrice = Some(dto.buyPrice.round2),
-            profitPercent = Some(dto.profitPercent.round3),
-            isWin = dto.isWin,
-            screenshotPaths = dto.screenshotUrls, // TODO: в строке на самом деле несколько путей, разделённых точкой с запятой
-            tags = dto.tags,
-            isCorrect = dto.isCorrect,
-            description = dto.description
-        )
-}
-
-case class ContractData(number: Int,
-                        contractType: String,
-                        created: Date,
-                        expiration: Int = 5,
-                        fxSymbol: String,
-                        direction: String,
-                        buyPrice: Double, // TODO: сделать опциональным (в т.ч. на самой форме)
-                        profitPercent: Double, // TODO: сделать опциональным (в т.ч. на самой форме)
-                        isWin: Boolean,
-                        screenshotUrls: String, // TODO: в строке на самом деле несколько путей, разделённых точкой с запятой, потом мб сделаю Seq
-                        tags: String,
-                        isCorrect: Boolean, // TODO: сделать опциональным (в т.ч. на самой форме)
-                        description: String)
-
-object ContractData {
-    def apply(contract: Contract): ContractData =
-        new ContractData(
-            number = contract.number,
-            contractType = contract.contractType,
-            created = new Date(contract.created.getTime),
-            expiration = contract.expiration,
-            fxSymbol = contract.fxSymbol,
-            direction = contract.direction,
-            buyPrice = contract.buyPrice.getOrElse(0.0).round2,
-            profitPercent = contract.profitPercent.getOrElse(0.0).round3,
-            isWin = contract.isWin,
-            screenshotUrls = contract.screenshotPaths,
-            tags = contract.tags,
-            isCorrect = contract.isCorrect,
-            description = contract.description
-        )
 }

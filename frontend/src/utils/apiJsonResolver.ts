@@ -16,18 +16,36 @@ import {eqString} from "fp-ts/es6/Eq"
 import {ordString} from "fp-ts/es6/Ord"
 import DetailedError from "../models/DetailedError"
 import EventBus from "./EventBus"
+import {isFullPermissions} from "./Helper"
 
 // TODO: файл раздувается. Раскидать на модули поменьше (для моделей; простые запросы; запросы, не требующие ответа)
 
 // TODO: Подумать про вывод тела ответа запроса - насколько нужно и как сделать
 //  (там сейчас проблема, что тело достаётся через промис, который заблокирован другим потоком)
 
+
+// TODO: опять же, очень тупо, особенно без HTTPS, но потом перепишу на JWT
+function addAuthHeader(currentFetchProps?: RequestInit): RequestInit {
+    let authHeader = { "For-Guest": String(!isFullPermissions()) }
+
+    if (currentFetchProps) {
+        currentFetchProps.headers = { ...currentFetchProps.headers, ...authHeader }
+        return currentFetchProps
+    } else {
+        return {
+            headers: {
+                ...authHeader
+            }
+        }
+    }
+}
+
 export function getResponse(fetchProps?: RequestInit) {
     return function (url: string): TaskEither<DetailedError, Response> {
         return TE.tryCatch(
             () => {
                 console.log("STEP: START FETCHING...")
-                return fetch(url, fetchProps)
+                return fetch(url, addAuthHeader(fetchProps))
             },
             flow(
                 String,

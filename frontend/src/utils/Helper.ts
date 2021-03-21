@@ -1,5 +1,6 @@
 import {Option} from "fp-ts/es6/Option";
 import * as A from "fp-ts/es6/Array";
+import Vue from "vue"
 
 function jsonReplacer<T>(key: string, value: T | Option<T>): T | string | null {
     if ((typeof value === 'object') && value && ("_tag" in value)) {
@@ -20,4 +21,18 @@ function jsonReplacer<T>(key: string, value: T | Option<T>): T | string | null {
 
 export function smartJsonStringify<T>(obj: T): string {
     return JSON.stringify(obj, jsonReplacer)
+}
+
+export function isFullPermissions(): boolean {
+    return Vue.cookies.isKey("user_password")
+}
+
+export function setAuthCookie(pass: string): void {
+    Vue.cookies.set("user_password", pass, { expires: Infinity })
+}
+
+export function removeAuthCookie(): void {
+    if (isFullPermissions()) {
+        Vue.cookies.remove("user_password")
+    }
 }

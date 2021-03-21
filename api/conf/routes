@@ -1,37 +1,21 @@
-GET     /                           controllers.ContractController.contractList
-
-GET     /addContractDraft           controllers.ContractController.addContractDraft()
-POST    /submitContractDraft        controllers.ContractController.submitContractDraft()
-
-GET     /addRawContractDraft        controllers.ContractController.addRawContractDraft()
-POST    /submitRawContractDraft     controllers.ContractController.submitRawContractDraft()
-
-+nocsrf
-POST    /submitProfitTable          controllers.ContractController.submitProfitTable()
-
-GET     /editPrefillContract/:id    controllers.ContractController.editPrefillContract(id: String)
-
-GET     /addEditContract            controllers.ContractController.addEditContract(id: Option[String] ?= None)
-POST    /addEditContract            controllers.ContractController.submitContract(idForUpdate: Option[String] ?= None)
-
-GET     /viewContract/:id           controllers.ContractController.viewContract(id: String)
-
-GET     /deleteContract/:id         controllers.ContractController.deleteContract(id: String)
-
-GET     /generalStats               controllers.StatsController.generalStats()
-
-POST    /submitStrategyFilter       controllers.UserSettingController.submitStrategyFilter(backUrl: String)
-
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
 GET     /ping                       controllers.ContractController.ping()
 
-GET     /api/contractList           controllers.ContractController.contractListNew
-GET     /api/contractDetails/:id    controllers.ContractController.contractCardNew(id: String)
+POST    /api/signIn                 controllers.ContractController.signIn
 
-POST    /api/submitContract         controllers.ContractController.submitContractNew
-POST    /api/prefillContract        controllers.ContractController.prefillContractNew
+GET     /api/contractList           controllers.ContractController.contractList
+GET     /api/contractDetails/:id    controllers.ContractController.contractCard(id: String)
 
-GET     /api/deleteContract/:id     controllers.ContractController.deleteContractNew(id: String)
+POST    /api/submitContract         controllers.ContractController.submitContract
+POST    /api/prefillContract        controllers.ContractController.prefillContract
+
+GET     /api/deleteContract/:id     controllers.ContractController.deleteContract(id: String)
 
 GET     /api/newContractData        controllers.ContractController.newContractData
+
+GET     /api/stats/allTime          controllers.StatsController.allTimeStats
+GET     /api/stats/daily            controllers.StatsController.dailyStats
+GET     /api/stats/weekly           controllers.StatsController.weeklyStats
+GET     /api/stats/monthly          controllers.StatsController.monthlyStats
+GET     /api/stats/all              controllers.StatsController.allStats

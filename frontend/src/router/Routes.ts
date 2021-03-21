@@ -3,5 +3,7 @@ export default {
     createContract: "/createContract",
     stats: "/stats",
     contractDetails: "/contract", // /:id/:mode
-    prefillContract: "/prefillContract"
+    prefillContract: "/prefillContract",
+    signIn: "/signIn",
+    signOut: "/signOut"
 }
