@@ -7,5 +7,12 @@
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/trading_journal</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="d8hjg4c79srq1a@ec2-54-247-178-166.eu-west-1.compute.amazonaws.com" uuid="b9dd7f03-1594-4417-b95a-10dcab9616a0">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://ec2-54-247-178-166.eu-west-1.compute.amazonaws.com:5432/d8hjg4c79srq1a</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
