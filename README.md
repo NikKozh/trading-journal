@@ -3,6 +3,7 @@
 My humble pet-project. This is web-service for accounting binary options' contracts.
 
 Currently hosted on Heroku platform: https://bo-trading-journal.herokuapp.com/
+(wait up to 1 min. the first time you visit the site due to free Heroku plan)
 
 Key features:
 * CRUD for contracts.
