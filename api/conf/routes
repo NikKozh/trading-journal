@@ -4,13 +4,13 @@ GET     /ping                       controllers.ContractController.ping()
 
 POST    /api/signIn                 controllers.ContractController.signIn
 
-GET     /api/contractList           controllers.ContractController.contractListNew
-GET     /api/contractDetails/:id    controllers.ContractController.contractCardNew(id: String)
+GET     /api/contractList           controllers.ContractController.contractList
+GET     /api/contractDetails/:id    controllers.ContractController.contractCard(id: String)
 
-POST    /api/submitContract         controllers.ContractController.submitContractNew
-POST    /api/prefillContract        controllers.ContractController.prefillContractNew
+POST    /api/submitContract         controllers.ContractController.submitContract
+POST    /api/prefillContract        controllers.ContractController.prefillContract
 
-GET     /api/deleteContract/:id     controllers.ContractController.deleteContractNew(id: String)
+GET     /api/deleteContract/:id     controllers.ContractController.deleteContract(id: String)
 
 GET     /api/newContractData        controllers.ContractController.newContractData
 

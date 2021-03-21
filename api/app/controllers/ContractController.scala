@@ -33,7 +33,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
         }
     }
 
-    def contractListNew: Action[AnyContent] = Action.async { implicit request =>
+    def contractList: Action[AnyContent] = Action.async { implicit request =>
         contractService
             .list(request.authForGuest)
             .map(Json.toJson[Seq[Contract]])
@@ -44,7 +44,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
             }
     }
 
-    def contractCardNew(id: String): Action[AnyContent] = Action.async { implicit request =>
+    def contractCard(id: String): Action[AnyContent] = Action.async { implicit request =>
         contractService
             .get(id, request.authForGuest)
             .map(_
@@ -56,7 +56,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
             }
     }
 
-    def submitContractNew: Action[AnyContent] = Action.async { implicit request =>
+    def submitContract: Action[AnyContent] = Action.async { implicit request =>
         readAndParseJsonWithErrorHandling[Contract] { contract =>
             processScreenshots(contract.screenshotPaths)
                 .map(screenshots => contract.copy(screenshotPaths = screenshots))
@@ -79,7 +79,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
         }
     }
 
-    def deleteContractNew(id: String): Action[AnyContent] = Action.async { implicit request =>
+    def deleteContract(id: String): Action[AnyContent] = Action.async { implicit request =>
         contractService
             .delete(id, request.authForGuest)
             .map(isDeleted =>
@@ -100,7 +100,7 @@ class ContractController @Inject()(mcc: MessagesControllerComponents, contractSe
             }
     }
 
-    def prefillContractNew: Action[AnyContent] = Action.async { implicit request =>
+    def prefillContract: Action[AnyContent] = Action.async { implicit request =>
         readAndParseJsonWithErrorHandling[PrefillContractData] { prefillContractData =>
             BinaryHelper.getProfitTable.flatMap { profitTableJson =>
                 contractService.getNewNumber(request.authForGuest).flatMap { contractNumber =>
