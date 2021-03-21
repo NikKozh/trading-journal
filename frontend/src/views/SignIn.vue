@@ -1,8 +1,8 @@
 <template>
-    <el-form :model="form" ref="form" :rules="rules" label-position="top">
-        <el-form-item label="Пока пользователь только один. Введите пароль:" prop="password">
+    <el-form :model="form" ref="form" :rules="rules" label-position="top" inline>
+        <el-form-item class="sign-in-label" label="Пока пользователь только один. Введите пароль:" prop="password">
             <el-input v-model="form.password" type="password"></el-input>
-            <el-form-item>
+            <el-form-item class="sign-in-buttons">
                 <el-button type="primary" @click="submitForm">Отправить</el-button>
                 <el-button @click="handleBack">Отмена</el-button>
             </el-form-item>
@@ -52,7 +52,7 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            // TODO: отправляем в открытую и без HTTPS, просто отвратительно, но это временное решение
+                            // TODO: отправляем в открытую и без HTTPS, просто отвратительно x2, временное решение
                             body: JSON.stringify({
                                 password: this.form.password
                             })
@@ -65,11 +65,18 @@
         }
 
         handleBack() {
-            goToPage.contractCard(this.contract.id)
+            goToPage.contractList()
         }
     }
 </script>
 
-<style scoped>
+<style>
+    .sign-in-label label {
+        padding: 0 !important;
+        margin-top: -15px;
+    }
 
+    .sign-in-buttons {
+        padding-top: 10px;
+    }
 </style>
